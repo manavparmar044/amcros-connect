@@ -1,6 +1,8 @@
+import { useRouter } from "expo-router";
 import { Text, View, TouchableOpacity } from "react-native";
 
 export default function LandingScreen() {
+  const router = useRouter()
   return (
     <View
       style={{
@@ -47,7 +49,7 @@ export default function LandingScreen() {
       {/* Button Container */}
       <View style={{ width: "80%" }}> 
         {/* Get Started Button */}
-        <TouchableOpacity
+        <TouchableOpacity onPress={()=>router.push('/auth/signUp')}
           style={{
             backgroundColor: "#f43e17",
             paddingVertical: 14,
@@ -69,7 +71,7 @@ export default function LandingScreen() {
         </TouchableOpacity>
 
         {/* Sign In Button */}
-        <TouchableOpacity
+        <TouchableOpacity onPress={()=>router.push('/auth/signIn')}
           style={{
             backgroundColor: "#000000",
             paddingVertical: 14,
