@@ -1,8 +1,22 @@
+import { UserDetailContext } from "@/context/UserDetailContext";
 import { useRouter } from "expo-router";
+import { useContext } from "react";
 import { Text, View, TouchableOpacity } from "react-native";
+import { auth, db } from "./../config/firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function LandingScreen() {
   const router = useRouter()
+  const {userDetail,setUserDetail} = useContext(UserDetailContext)
+  onAuthStateChanged(auth, async (user) => {
+    if(user){
+      console.log(user);
+      const res = await getDoc(doc(db,'users',user?.email))
+      setUserDetail(res.data())
+      router.replace('/(tabs)/Home')
+    }
+  })
   return (
     <View
       style={{
