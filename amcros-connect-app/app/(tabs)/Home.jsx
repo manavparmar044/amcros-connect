@@ -1,12 +1,13 @@
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  FlatList, 
-  TouchableOpacity, 
-  StatusBar, 
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  StatusBar,
   Platform,
-  SafeAreaView 
+  SafeAreaView,
+  Image,
 } from "react-native";
 import React, { useState } from "react";
 import { Feather } from "@expo/vector-icons";
@@ -15,33 +16,39 @@ const Home = () => {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const primaryColor = "#f43e17"; // Your primary color
-  
+
   const categories = ["All", "Men", "Women", "Kids", "Sports"];
-  
+
   // Sample product data
-  const products = Array(8).fill(null).map((_, index) => ({
-    id: index.toString(),
-    name: `Product ${index + 1}`,
-    price: `$${(Math.random() * 20 + 10).toFixed(2)}`,
-  }));
+  const products = Array(8)
+    .fill(null)
+    .map((_, index) => ({
+      id: index.toString(),
+      name: `Product ${index + 1}`,
+      price: `$${(Math.random() * 20 + 10).toFixed(2)}`,
+    }));
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-      
+
       {/* Top Bar with SafeAreaView to handle status bar properly */}
-      <View style={{ 
-        backgroundColor: primaryColor,
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-      }}>
+      <View
+        style={{
+          backgroundColor: primaryColor,
+          paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+        }}
+      >
         <SafeAreaView style={{ backgroundColor: primaryColor }}>
-          <View style={{ 
-            paddingVertical: 20, 
-            paddingHorizontal: 20,
-            flexDirection: 'row', 
-            justifyContent: 'space-between', 
-            alignItems: 'center' 
-          }}>
+          <View
+            style={{
+              paddingVertical: 20,
+              paddingHorizontal: 20,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>
               Hello, BusinessName
             </Text>
@@ -51,20 +58,33 @@ const Home = () => {
           </View>
         </SafeAreaView>
       </View>
-      
+
       {/* Search Bar - Now below the top bar */}
-      <View style={{ paddingHorizontal: 20, paddingVertical: 15, backgroundColor: '#fff' }}>
-        <View style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: "#f5f5f5",
-          paddingHorizontal: 15,
-          paddingVertical: 10,
-          borderRadius: 8,
-          borderWidth: 1,
-          borderColor: "#eee",
-        }}>
-          <Feather name="search" size={20} color="#666" style={{ marginRight: 10 }} />
+      <View
+        style={{
+          paddingHorizontal: 20,
+          paddingVertical: 15,
+          backgroundColor: "#fff",
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: "#f5f5f5",
+            paddingHorizontal: 15,
+            paddingVertical: 10,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: "#eee",
+          }}
+        >
+          <Feather
+            name="search"
+            size={20}
+            color="#666"
+            style={{ marginRight: 10 }}
+          />
           <TextInput
             placeholder="Search for socks..."
             placeholderTextColor="#999"
@@ -74,7 +94,7 @@ const Home = () => {
           />
         </View>
       </View>
-      
+
       {/* Categories */}
       <View style={{ paddingVertical: 10, paddingHorizontal: 15 }}>
         <FlatList
@@ -83,46 +103,51 @@ const Home = () => {
           data={categories}
           keyExtractor={(item) => item}
           renderItem={({ item }) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setActiveCategory(item)}
               style={{
                 paddingHorizontal: 18,
                 paddingVertical: 8,
                 marginHorizontal: 5,
-                backgroundColor: activeCategory === item ? primaryColor : '#fff',
+                backgroundColor:
+                  activeCategory === item ? primaryColor : "#fff",
                 borderRadius: 20,
                 borderWidth: 1,
-                borderColor: activeCategory === item ? primaryColor : '#ddd',
+                borderColor: activeCategory === item ? primaryColor : "#ddd",
               }}
             >
-              <Text style={{ 
-                color: activeCategory === item ? '#fff' : '#333',
-                fontWeight: activeCategory === item ? '600' : 'normal',
-              }}>
+              <Text
+                style={{
+                  color: activeCategory === item ? "#fff" : "#333",
+                  fontWeight: activeCategory === item ? "600" : "normal",
+                }}
+              >
                 {item}
               </Text>
             </TouchableOpacity>
           )}
         />
       </View>
-      
+
       {/* Section Title with count */}
-      <View style={{ 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        paddingHorizontal: 20, 
-        paddingTop: 15,
-        paddingBottom: 10 
-      }}>
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: '#333' }}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingHorizontal: 20,
+          paddingTop: 15,
+          paddingBottom: 10,
+        }}
+      >
+        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
           Our Collection
         </Text>
-        <Text style={{ color: '#777', fontSize: 14 }}>
+        <Text style={{ color: "#777", fontSize: 14 }}>
           {products.length} products
         </Text>
       </View>
-      
+
       {/* Product Grid */}
       <FlatList
         data={products}
@@ -142,18 +167,41 @@ const Home = () => {
               shadowOpacity: 0.08,
               shadowRadius: 8,
               elevation: 3,
-              overflow: 'hidden',
+              overflow: "hidden",
             }}
           >
-            <View style={{ height: 140, backgroundColor: '#f5f5f5', justifyContent: 'center', alignItems: 'center' }}>
-              <Feather name="image" size={40} color="#ddd" />
+            <View
+              style={{
+                height: 140,
+                backgroundColor: "#f5f5f5",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Image
+                source={{ uri: "https://res.cloudinary.com/ds4z0fqxi/image/upload/v1743043776/Screenshot_2025-03-27_at_8.19.50_AM_vfge26.png" }}
+                style={{ width: "100%", height: "100%", resizeMode: "cover" }}
+              />
             </View>
-            
+
             <View style={{ padding: 12 }}>
-              <Text style={{ fontSize: 15, fontWeight: '500', color: '#333', marginBottom: 4 }}>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "500",
+                  color: "#333",
+                  marginBottom: 4,
+                }}
+              >
                 {item.name}
               </Text>
-              <Text style={{ fontSize: 16, fontWeight: 'bold', color: primaryColor }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  color: primaryColor,
+                }}
+              >
                 {item.price}
               </Text>
             </View>

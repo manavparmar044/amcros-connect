@@ -14,6 +14,7 @@ export default function LandingScreen() {
       console.log(user);
       const res = await getDoc(doc(db,'users',user?.email))
       setUserDetail(res.data())
+      console.log("Hello", res.data());
       router.replace('/(tabs)/Home')
     }
   })

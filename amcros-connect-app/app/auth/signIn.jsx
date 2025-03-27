@@ -15,20 +15,19 @@ export default function signIn() {
 
   const onSignIn = async () => {
     setLoading(true);
-    try {
-      const res = await signInWithEmailAndPassword(auth, email, password);
-      console.log(res.user);
-      await getUserDetails();
-      router.replace("/(tabs)/Home")
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
+    signInWithEmailAndPassword(auth,email,password)
+    .then(async (res) => {
+      const user = res.user
+      console.log("User from here ", user);
+      await getUserDetails()
+    })
+    .catch(err => {
+      console.log(err);
+    })
   };
 
   const getUserDetails = async () => {
-    const res = await getDoc(doc(db, "users", email));
+    const res = await getDoc(doc(db, 'users', email));
     console.log(res.data());
     setUserDetail(res.data());
   };
