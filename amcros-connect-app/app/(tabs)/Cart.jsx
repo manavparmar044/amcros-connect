@@ -6,9 +6,11 @@ import {
   ScrollView, 
   StatusBar, 
   StyleSheet,
-  Platform
+  Platform,
+  SafeAreaView
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 const primaryColor = "#f43e17";
 
@@ -118,17 +120,37 @@ const Cart = ({ navigation }) => {
     </View>
   );
 
+  const router = useRouter()
+
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
       
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
-          <Feather name="arrow-left" size={22} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Shopping Cart</Text>
-        <View style={{ width: 22 }} />
+      <View
+        style={{
+          backgroundColor: primaryColor,
+          paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+        }}
+      >
+        <SafeAreaView style={{ backgroundColor: primaryColor }}>
+          <View
+            style={{
+              paddingVertical: 20,
+              paddingHorizontal: 20,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>
+              Cart
+            </Text>
+            <TouchableOpacity>
+              <Feather name="shopping-cart" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
       </View>
       
       {cartItems.length > 0 ? (
@@ -176,7 +198,7 @@ const Cart = ({ navigation }) => {
               <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.continueShoppingButton}>
+            <TouchableOpacity onPress={()=>router.push("/Home")} style={styles.continueShoppingButton}>
               <Text style={styles.continueShoppingText}>Continue Shopping</Text>
             </TouchableOpacity>
           </View>
