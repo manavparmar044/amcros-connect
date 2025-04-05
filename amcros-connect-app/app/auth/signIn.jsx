@@ -27,9 +27,21 @@ export default function signIn() {
   };
 
   const getUserDetails = async () => {
-    const res = await getDoc(doc(db, 'users', email));
-    console.log(res.data());
-    setUserDetail(res.data());
+    try {
+      const res = await getDoc(doc(db, 'users', email));
+      if (res.exists()) {
+        const data = res.data();
+        console.log("Fetched user data:", data);
+        setUserDetail(data);
+        router.replace("/(tabs)/Home"); // Navigate AFTER setting context
+      } else {
+        console.log("No such document!");
+      }
+    } catch (err) {
+      console.error("Error fetching user data:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
