@@ -9,30 +9,45 @@ import {
   SafeAreaView,
   Image,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Feather } from "@expo/vector-icons";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../config/firebaseConfig";
 
 const Home = () => {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
-  const primaryColor = "#f43e17"; // Your primary color
+  const [products, setProducts] = useState([]);
 
-  const categories = ["All", "Men", "Women", "Kids", "Sports"];
+  const primaryColor = "#f43e17";
+  const categories = ["All", "Designer", "Ankle", "Women", "Sports"];
 
-  // Sample product data
-  const products = Array(8)
-    .fill(null)
-    .map((_, index) => ({
-      id: index.toString(),
-      name: `Product ${index + 1}`,
-      price: `$${(Math.random() * 20 + 10).toFixed(2)}`,
-    }));
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "products"));
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setProducts(data);
+      } catch (err) {
+        console.error("Failed to fetch products:", err);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const filteredProducts = products.filter((item) =>
+    activeCategory === "All" ? true : item.category === activeCategory
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
 
-      {/* Top Bar with SafeAreaView to handle status bar properly */}
+      {/* Top Bar */}
       <View
         style={{
           backgroundColor: primaryColor,
@@ -59,7 +74,7 @@ const Home = () => {
         </SafeAreaView>
       </View>
 
-      {/* Search Bar - Now below the top bar */}
+      {/* Search Bar */}
       <View
         style={{
           paddingHorizontal: 20,
@@ -129,7 +144,7 @@ const Home = () => {
         />
       </View>
 
-      {/* Section Title with count */}
+      {/* Section Title */}
       <View
         style={{
           flexDirection: "row",
@@ -144,13 +159,13 @@ const Home = () => {
           Our Collection
         </Text>
         <Text style={{ color: "#777", fontSize: 14 }}>
-          {products.length} products
+          {filteredProducts.length} products
         </Text>
       </View>
 
       {/* Product Grid */}
       <FlatList
-        data={products}
+        data={filteredProducts}
         numColumns={2}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 20 }}
@@ -179,7 +194,7 @@ const Home = () => {
               }}
             >
               <Image
-                source={{ uri: "https://res.cloudinary.com/ds4z0fqxi/image/upload/v1743043776/Screenshot_2025-03-27_at_8.19.50_AM_vfge26.png" }}
+                source={{ uri: item.image }}
                 style={{ width: "100%", height: "100%", resizeMode: "cover" }}
               />
             </View>
@@ -195,6 +210,8 @@ const Home = () => {
               >
                 {item.name}
               </Text>
+
+              {/* Show "From ₹..." using first variant */}
               <Text
                 style={{
                   fontSize: 16,
@@ -202,7 +219,7 @@ const Home = () => {
                   color: primaryColor,
                 }}
               >
-                {item.price}
+                From ₹{item.variants?.[0]?.price || "—"}
               </Text>
             </View>
           </TouchableOpacity>
