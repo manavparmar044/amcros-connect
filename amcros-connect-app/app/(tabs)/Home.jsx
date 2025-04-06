@@ -13,6 +13,7 @@ import React, { useState, useEffect } from "react";
 import { Feather } from "@expo/vector-icons";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebaseConfig";
+import { useRouter } from "expo-router";
 
 const Home = () => {
   const [search, setSearch] = useState("");
@@ -21,6 +22,8 @@ const Home = () => {
 
   const primaryColor = "#f43e17";
   const categories = ["All", "Designer", "Ankle", "Women", "Sports"];
+
+  const router = useRouter()
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -39,8 +42,11 @@ const Home = () => {
     fetchProducts();
   }, []);
 
+  // Updated filter for multiple types in array
   const filteredProducts = products.filter((item) =>
-    activeCategory === "All" ? true : item.category === activeCategory
+    activeCategory === "All"
+      ? true
+      : Array.isArray(item.type) && item.type.includes(activeCategory)
   );
 
   return (
@@ -172,19 +178,29 @@ const Home = () => {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={{
-              flex: 1,
-              margin: 8,
-              borderRadius: 12,
-              backgroundColor: "#fff",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-              overflow: "hidden",
-            }}
-          >
+  onPress={() =>
+    router.push({
+      pathname: "../screens/Product",
+      params: {
+        name: item.name,
+        image: item.image,
+        price: item.variants?.[0]?.price || "—",
+      },
+    })
+  }
+  style={{
+    flex: 1,
+    margin: 8,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    overflow: "hidden",
+  }}
+>
             <View
               style={{
                 height: 140,
@@ -211,7 +227,6 @@ const Home = () => {
                 {item.name}
               </Text>
 
-              {/* Show "From ₹..." using first variant */}
               <Text
                 style={{
                   fontSize: 16,

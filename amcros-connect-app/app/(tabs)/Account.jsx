@@ -70,7 +70,7 @@ const Account = () => {
     <View style={styles.container}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
       
-      {/* Header */}
+      {/* header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Account</Text>
         <TouchableOpacity 
@@ -164,6 +164,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
     zIndex: 1,
+    height: 70
   },
   headerTitle: {
     fontSize: 20,
