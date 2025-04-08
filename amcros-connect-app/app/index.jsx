@@ -11,11 +11,15 @@ export default function LandingScreen() {
   const {userDetail,setUserDetail} = useContext(UserDetailContext)
   onAuthStateChanged(auth, async (user) => {
     if(user){
+      console.log("Hello from index");
       console.log(user);
-      const res = await getDoc(doc(db,'users',user?.email))
+      console.log(user.email);
+      const res = await getDoc(doc(db,'users',"mmparmar044@gmail.com"))
       setUserDetail(res.data())
-      console.log("Hello", res.data());
       router.replace('/(tabs)/Home')
+    }
+    else{
+      console.log("No user detected");
     }
   })
   return (

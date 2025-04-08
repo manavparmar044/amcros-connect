@@ -9,11 +9,12 @@ import {
   SafeAreaView,
   Image,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Feather } from "@expo/vector-icons";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config/firebaseConfig";
 import { useRouter } from "expo-router";
+import { UserDetailContext } from "../../context/UserDetailContext";
 
 const Home = () => {
   const [search, setSearch] = useState("");
@@ -25,7 +26,15 @@ const Home = () => {
 
   const router = useRouter()
 
+  const { userDetail,setUserDetail } = useContext(UserDetailContext);
+
   useEffect(() => {
+    if(userDetail){
+      console.log("User detail: ",userDetail);
+    }
+    else{
+      console.log("Empty");
+    }
     const fetchProducts = async () => {
       try {
         const snapshot = await getDocs(collection(db, "products"));
@@ -71,7 +80,7 @@ const Home = () => {
             }}
           >
             <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>
-              Hello, BusinessName
+              Hello, {userDetail?.businessName}
             </Text>
             <TouchableOpacity>
               <Feather name="shopping-cart" size={24} color="#fff" />

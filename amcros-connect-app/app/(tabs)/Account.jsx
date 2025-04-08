@@ -10,7 +10,7 @@ const primaryColor = "#f43e17";
 
 const Account = () => {
   const router = useRouter();
-  const { userDetail } = useContext(UserDetailContext);
+  const { userDetail,setUserDetail } = useContext(UserDetailContext);
 
   const handleLogout = () => {
     Alert.alert(

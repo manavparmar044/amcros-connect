@@ -5,6 +5,7 @@ import { auth, db } from "../../config/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { useContext, useState } from "react";
 import { UserDetailContext } from "../../context/UserDetailContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function signIn() {
   const { userDetail, setUserDetail } = useContext(UserDetailContext);
@@ -29,14 +30,9 @@ export default function signIn() {
   const getUserDetails = async () => {
     try {
       const res = await getDoc(doc(db, 'users', email));
-      if (res.exists()) {
-        const data = res.data();
-        console.log("Fetched user data:", data);
-        setUserDetail(data);
-        router.replace("/(tabs)/Home"); // Navigate AFTER setting context
-      } else {
-        console.log("No such document!");
-      }
+      console.log(res.data());
+      setUserDetail(res.data())
+      router.replace('/(tabs)/Home')
     } catch (err) {
       console.error("Error fetching user data:", err);
     } finally {
