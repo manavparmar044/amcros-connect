@@ -9,15 +9,20 @@ import {
   SafeAreaView,
   Platform
 } from "react-native";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { UserDetailContext } from "../../context/UserDetailContext";
+import { arrayUnion, doc, updateDoc } from "firebase/firestore";
+import { db } from "../../config/firebaseConfig";
 
 const primaryColor = "#f43e17";
 
 const Product = () => {
   const { name, image, price } = useLocalSearchParams();
   const router = useRouter();
+
+  const { userDetail,setUserDetail } = useContext(UserDetailContext);
   
   // State for pack size selection
   const [selectedPack, setSelectedPack] = useState(3);
@@ -31,6 +36,26 @@ const Product = () => {
   // Quantity handlers
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
+
+  const handleAddToCart = async () => {
+    const cartItem = {
+      name,
+      image,
+      packSize: selectedPack,
+      quantity,
+      unitPrice: selectedPack === 3 ? basePrice : Math.round(basePrice * 1.2),
+      timestamp: new Date(),
+    }
+    try{
+      const userRef = doc(db,'users',userDetail?.email)
+      await updateDoc(userRef, {
+        cart: arrayUnion(cartItem)
+      })
+    }
+    catch(err){
+      console.log("Could not add to cart",err);
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -165,7 +190,7 @@ const Product = () => {
       
       {/* Add to Cart Button */}
       <View style={styles.bottomContainer}>
-        <TouchableOpacity style={styles.addToCartButton}>
+        <TouchableOpacity onPress={handleAddToCart} style={styles.addToCartButton}>
           <Feather name="shopping-bag" size={20} color="#fff" style={styles.buttonIcon} />
           <Text style={styles.addToCartButtonText}>Add to Cart</Text>
         </TouchableOpacity>

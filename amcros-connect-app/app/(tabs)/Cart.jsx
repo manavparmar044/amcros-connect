@@ -1,110 +1,143 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  ScrollView, 
-  StatusBar, 
+import React, { useContext, useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StatusBar,
   StyleSheet,
   Platform,
-  SafeAreaView
+  SafeAreaView,
+  Image,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../../config/firebaseConfig';
+import { UserDetailContext } from '../../context/UserDetailContext';
 
 const primaryColor = "#f43e17";
 
-// Dummy cart data
-const initialCartItems = [
-  {
-    id: '1',
-    name: 'Premium Cotton Socks',
-    variant: 'Black / Large',
-    price: 12.99,
-    quantity: 2,
-    image: null // Replace with actual image
-  },
-  {
-    id: '2',
-    name: 'Sports Performance Socks',
-    variant: 'White / Medium',
-    price: 9.99,
-    quantity: 1,
-    image: null
-  },
-  {
-    id: '3',
-    name: 'Casual Striped Socks',
-    variant: 'Blue / Medium',
-    price: 7.99,
-    quantity: 3,
-    image: null
-  }
-];
+const Cart = () => {
+  const { userDetail } = useContext(UserDetailContext);
+  const [cartItems, setCartItems] = useState([]);
+  const router = useRouter();
 
-const Cart = ({ navigation }) => {
-  const [cartItems, setCartItems] = useState(initialCartItems);
-  
-  const updateQuantity = (id, change) => {
-    setCartItems(prevItems => 
-      prevItems.map(item => {
-        if (item.id === id) {
-          const newQuantity = Math.max(1, item.quantity + change);
-          return { ...item, quantity: newQuantity };
+  useEffect(() => {
+    const fetchCartItems = async () => {
+      try {
+        const docRef = doc(db, 'users', userDetail?.email);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.cart) {
+            const formattedItems = data.cart.map((item, index) => ({
+              id: index,
+              name: item.name,
+              variant: `${item.packSize} Pack`,
+              price: item.price ?? 0,
+              quantity: item.quantity ?? 1,
+              image: item.image,
+            }));
+            setCartItems(formattedItems);
+          }
+        } else {
+          console.log('No such document!');
         }
-        return item;
-      })
-    );
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    fetchCartItems();
+  }, []);
+
+  const updateQuantity = async (id, change) => {
+    const updatedCart = cartItems.map(item => {
+      if (item.id === id) {
+        const newQuantity = item.quantity + change;
+        return newQuantity < 1 ? null : { ...item, quantity: newQuantity };
+      }
+      return item;
+    }).filter(Boolean); // remove nulls if quantity < 1
+  
+    setCartItems(updatedCart);
+  
+    try {
+      const docRef = doc(db, 'users', userDetail?.email);
+      await updateDoc(docRef, {
+        cart: updatedCart
+      });
+    } catch (err) {
+      console.error('Error updating cart:', err);
+    }
+  };
+
+  const removeItem = async (id) => {
+    const updatedCart = cartItems.filter(item => item.id !== id);
+    setCartItems(updatedCart);
+  
+    try {
+      const docRef = doc(db, 'users', userDetail?.email);
+      await updateDoc(docRef, {
+        cart: updatedCart
+      });
+    } catch (err) {
+      console.error('Error removing item from cart:', err);
+    }
   };
   
-  const removeItem = (id) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== id));
-  };
-  
+
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.08; // 8% tax
+  const tax = subtotal * 0.08;
   const shipping = subtotal > 50 ? 0 : 5.99;
   const total = subtotal + tax + shipping;
-  
+
   const renderCartItem = (item) => (
     <View key={item.id} style={styles.cartItem}>
       <View style={styles.productImage}>
-        <Feather name="box" size={30} color="#ccc" />
+        <Image
+          source={{ uri: item.image }}
+          style={{ width: 60, height: 60, borderRadius: 8 }}
+          resizeMode="cover"
+        />
       </View>
-      
+
       <View style={styles.productInfo}>
         <Text style={styles.productName}>{item.name}</Text>
         <Text style={styles.productVariant}>{item.variant}</Text>
-        <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+        <Text style={styles.productPrice}>
+          ₹{typeof item.price === 'number' ? item.price.toFixed(2) : '0.00'}
+        </Text>
       </View>
-      
+
       <View style={styles.quantityContainer}>
-        <TouchableOpacity 
-          style={styles.quantityButton} 
+        <TouchableOpacity
+          style={styles.quantityButton}
           onPress={() => updateQuantity(item.id, -1)}
         >
           <Feather name="minus" size={16} color="#555" />
         </TouchableOpacity>
-        
+
         <Text style={styles.quantityText}>{item.quantity}</Text>
-        
-        <TouchableOpacity 
-          style={styles.quantityButton} 
+
+        <TouchableOpacity
+          style={styles.quantityButton}
           onPress={() => updateQuantity(item.id, 1)}
         >
           <Feather name="plus" size={16} color="#555" />
         </TouchableOpacity>
       </View>
-      
-      <TouchableOpacity 
-        style={styles.removeButton} 
+
+      <TouchableOpacity
+        style={styles.removeButton}
         onPress={() => removeItem(item.id)}
       >
         <Feather name="trash-2" size={18} color="#999" />
       </TouchableOpacity>
     </View>
   );
-  
+
   const renderEmptyCart = () => (
     <View style={styles.emptyCartContainer}>
       <View style={styles.emptyCartIcon}>
@@ -120,13 +153,9 @@ const Cart = ({ navigation }) => {
     </View>
   );
 
-  const router = useRouter()
-
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-      
-      {/* Header */}
       <View
         style={{
           backgroundColor: primaryColor,
@@ -152,53 +181,50 @@ const Cart = ({ navigation }) => {
           </View>
         </SafeAreaView>
       </View>
-      
+
       {cartItems.length > 0 ? (
-        <ScrollView 
+        <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
           <Text style={styles.sectionTitle}>Cart Items</Text>
-          
-          {/* Cart Items */}
+
           <View style={styles.cartItemsContainer}>
             {cartItems.map(item => renderCartItem(item))}
           </View>
-          
-          {/* Order Summary */}
+
           <View style={styles.summaryContainer}>
             <Text style={styles.summaryTitle}>Order Summary</Text>
-            
+
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>${subtotal.toFixed(2)}</Text>
+              <Text style={styles.summaryValue}>₹{subtotal.toFixed(2)}</Text>
             </View>
-            
+
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Tax (8%)</Text>
-              <Text style={styles.summaryValue}>${tax.toFixed(2)}</Text>
+              <Text style={styles.summaryValue}>₹{tax.toFixed(2)}</Text>
             </View>
-            
+
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Shipping</Text>
               <Text style={styles.summaryValue}>
-                {shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}
+                {shipping === 0 ? 'Free' : `₹${shipping.toFixed(2)}`}
               </Text>
             </View>
-            
+
             <View style={[styles.summaryRow, styles.totalRow]}>
               <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+              <Text style={styles.totalValue}>₹{total.toFixed(2)}</Text>
             </View>
           </View>
-          
-          {/* Checkout Buttons */}
+
           <View style={styles.checkoutContainer}>
             <TouchableOpacity style={styles.checkoutButton}>
               <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity onPress={()=>router.push("/Home")} style={styles.continueShoppingButton}>
+
+            <TouchableOpacity onPress={() => router.push("/Home")} style={styles.continueShoppingButton}>
               <Text style={styles.continueShoppingText}>Continue Shopping</Text>
             </TouchableOpacity>
           </View>
@@ -209,7 +235,6 @@ const Cart = ({ navigation }) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
