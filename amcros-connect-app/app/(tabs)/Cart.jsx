@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../config/firebaseConfig';
 import { UserDetailContext } from '../../context/UserDetailContext';
@@ -19,38 +19,57 @@ import { UserDetailContext } from '../../context/UserDetailContext';
 const primaryColor = "#f43e17";
 
 const Cart = () => {
+  const [orderConfirmVisible, setOrderConfirmVisible] = useState(false);
+  const [orderDetails, setOrderDetails] = useState(null);
   const { userDetail } = useContext(UserDetailContext);
   const [cartItems, setCartItems] = useState([]);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchCartItems = async () => {
-      try {
-        const docRef = doc(db, 'users', userDetail?.email);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.cart) {
-            const formattedItems = data.cart.map((item, index) => ({
-              id: index,
-              name: item.name,
-              variant: `${item.packSize} Pack`,
-              price: item.price ?? 0,
-              quantity: item.quantity ?? 1,
-              image: item.image,
-            }));
-            setCartItems(formattedItems);
-          }
-        } else {
-          console.log('No such document!');
-        }
-      } catch (err) {
-        console.log(err);
-      }
+  const handleCheckout = () => {
+    const orderDetails = {
+      total,
+      items: cartItems,
     };
-    fetchCartItems();
-  }, []);
+  
+    router.push({
+      pathname: '../screens/OrderConfirmation',
+      params: {
+        orderDetails: JSON.stringify(orderDetails)  // Serialize for safety
+      }
+    });
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchCartItems = async () => {
+        try {
+          const docRef = doc(db, 'users', userDetail?.email);
+          const docSnap = await getDoc(docRef);
+  
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.cart) {
+              const formattedItems = data.cart.map((item, index) => ({
+                id: index,
+                name: item.name,
+                variant: `${item.packSize} Pack`,
+                price: item.price ?? 0,
+                quantity: item.quantity ?? 1,
+                image: item.image,
+              }));
+              setCartItems(formattedItems);
+            }
+          } else {
+            console.log('No such document!');
+          }
+        } catch (err) {
+          console.log(err);
+        }
+      };
+  
+      fetchCartItems();
+    }, [userDetail?.email])
+  );
 
   const updateQuantity = async (id, change) => {
     const updatedCart = cartItems.map(item => {
@@ -220,7 +239,7 @@ const Cart = () => {
           </View>
 
           <View style={styles.checkoutContainer}>
-            <TouchableOpacity style={styles.checkoutButton}>
+            <TouchableOpacity onPress={handleCheckout} style={styles.checkoutButton}>
               <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
             </TouchableOpacity>
 
@@ -235,6 +254,7 @@ const Cart = () => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

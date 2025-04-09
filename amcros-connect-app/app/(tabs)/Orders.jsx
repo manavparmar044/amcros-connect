@@ -1,83 +1,36 @@
-"use client"
-
-import { useState } from "react"
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, StyleSheet, Platform, SafeAreaView } from "react-native"
+import { useState, useEffect, useContext } from "react"
+import { View, Text, TouchableOpacity, ScrollView, StatusBar, Platform, SafeAreaView, StyleSheet, Image } from "react-native"
 import { Feather } from "@expo/vector-icons"
+import { doc, getDoc } from "firebase/firestore"
+import { UserDetailContext } from "../../context/UserDetailContext"
+import { db } from "../../config/firebaseConfig"
 
 const primaryColor = "#f43e17"
 
-// Dummy orders data
-const initialOrders = [
-  {
-    id: "1",
-    orderNumber: "ORD-2023-001",
-    date: "2023-11-15",
-    status: "Delivered",
-    items: [
-      {
-        id: "1a",
-        name: "Premium Cotton Socks",
-        variant: "Black / Large",
-        price: 12.99,
-        quantity: 2,
-      },
-      {
-        id: "1b",
-        name: "Sports Performance Socks",
-        variant: "White / Medium",
-        price: 9.99,
-        quantity: 1,
-      },
-    ],
-    total: 35.97,
-    shippingAddress: "123 Main St, Anytown, CA 12345",
-  },
-  {
-    id: "2",
-    orderNumber: "ORD-2023-002",
-    date: "2023-12-01",
-    status: "Processing",
-    items: [
-      {
-        id: "2a",
-        name: "Casual Striped Socks",
-        variant: "Blue / Medium",
-        price: 7.99,
-        quantity: 3,
-      },
-    ],
-    total: 23.97,
-    shippingAddress: "456 Oak Ave, Somewhere, NY 67890",
-  },
-  {
-    id: "3",
-    orderNumber: "ORD-2023-003",
-    date: "2023-12-10",
-    status: "Shipped",
-    items: [
-      {
-        id: "3a",
-        name: "Premium Cotton Socks",
-        variant: "Gray / Medium",
-        price: 12.99,
-        quantity: 1,
-      },
-      {
-        id: "3b",
-        name: "Sports Performance Socks",
-        variant: "Black / Large",
-        price: 9.99,
-        quantity: 2,
-      },
-    ],
-    total: 32.97,
-    shippingAddress: "789 Pine Rd, Elsewhere, TX 54321",
-  },
-]
-
 const Orders = ({ navigation }) => {
-  const [orders, setOrders] = useState(initialOrders)
+  const [orders, setOrders] = useState([])
   const [expandedOrder, setExpandedOrder] = useState(null)
+  const { userDetail } = useContext(UserDetailContext);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const userRef = doc(db, "users", userDetail?.email)
+        const userSnap = await getDoc(userRef)
+
+        if (userSnap.exists()) {
+          const data = userSnap.data()
+          setOrders(data.orders || [])
+        }
+      } catch (err) {
+        console.error("Failed to fetch orders:", err)
+      }
+    }
+
+    if (userDetail?.email) {
+      fetchOrders()
+    }
+  }, [userDetail])
 
   const toggleOrderDetails = (orderId) => {
     if (expandedOrder === orderId) {
@@ -117,30 +70,37 @@ const Orders = ({ navigation }) => {
     }
   }
 
-  const renderOrderItem = (item) => (
-    <View key={item.id} style={styles.orderItem}>
-      <View style={styles.productImage}>
-        <Feather name="box" size={24} color="#ccc" />
+  const renderOrderItem = (item, index) => {
+    console.log(item.image);
+    return (
+      <View key={`${item.id || item.name}-${index}`} style={styles.orderItem}>
+        <View style={styles.productImage}>
+        <Image
+        source={{ uri: item.image }}
+        style={styles.imageStyle}
+        resizeMode="cover"
+      />
+        </View>
+  
+        <View style={styles.productInfo}>
+          <Text style={styles.productName}>{item.name}</Text>
+          <Text style={styles.productVariant}>{item.variant}</Text>
+        </View>
+  
+        <View style={styles.priceContainer}>
+          <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+          <Text style={styles.quantityText}>Qty: {item.quantity}</Text>
+        </View>
       </View>
+    )
+  }
 
-      <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productVariant}>{item.variant}</Text>
-      </View>
-
-      <View style={styles.priceContainer}>
-        <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
-        <Text style={styles.quantityText}>Qty: {item.quantity}</Text>
-      </View>
-    </View>
-  )
-
-  const renderOrder = (order) => {
-    const isExpanded = expandedOrder === order.id
+  const renderOrder = (order, index) => {
+    const isExpanded = expandedOrder === order.orderNumber
 
     return (
-      <View key={order.id} style={styles.orderContainer}>
-        <TouchableOpacity style={styles.orderHeader} onPress={() => toggleOrderDetails(order.id)} activeOpacity={0.7}>
+      <View key={order.orderNumber || `order-${index}`} style={styles.orderContainer}>
+        <TouchableOpacity style={styles.orderHeader} onPress={() => toggleOrderDetails(order.id || order.orderNumber)} activeOpacity={0.7}>
           <View>
             <Text style={styles.orderNumber}>{order.orderNumber}</Text>
             <Text style={styles.orderDate}>Order Date: {order.date}</Text>
@@ -163,7 +123,7 @@ const Orders = ({ navigation }) => {
           <View style={styles.orderDetails}>
             <View style={styles.orderItemsContainer}>
               <Text style={styles.sectionTitle}>Order Items</Text>
-              {order.items.map((item) => renderOrderItem(item))}
+              {order.items.map((item) => renderOrderItem({ ...item, key: item.id || `${item.name}-${item.variant}` }))}
             </View>
 
             <View style={styles.orderSummary}>
@@ -251,7 +211,7 @@ const Orders = ({ navigation }) => {
 
       {orders.length > 0 ? (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {orders.map((order) => renderOrder(order))}
+          {orders.map((order) => renderOrder({ ...order, key: order.orderNumber || order.id }))}
         </ScrollView>
       ) : (
         renderEmptyOrders()
@@ -356,6 +316,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     alignItems: "center",
   },
+  imageStyle: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 8,
+    backgroundColor: "#f0f0f0", // fallback bg
+  },
   productImage: {
     width: 40,
     height: 40,
@@ -364,6 +330,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    overflow: "hidden"
   },
   productInfo: {
     flex: 1,

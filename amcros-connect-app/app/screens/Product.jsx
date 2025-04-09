@@ -43,7 +43,7 @@ const Product = () => {
       image,
       packSize: selectedPack,
       quantity,
-      unitPrice: selectedPack === 3 ? basePrice : Math.round(basePrice * 1.2),
+      price: selectedPack === 3 ? basePrice : Math.round(basePrice * 1.2),
       timestamp: new Date(),
     }
     try{
