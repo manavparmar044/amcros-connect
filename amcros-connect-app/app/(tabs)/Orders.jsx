@@ -1,114 +1,125 @@
-import { useState, useEffect, useContext } from "react"
-import { View, Text, TouchableOpacity, ScrollView, StatusBar, Platform, SafeAreaView, StyleSheet, Image } from "react-native"
-import { Feather } from "@expo/vector-icons"
-import { doc, getDoc } from "firebase/firestore"
-import { UserDetailContext } from "../../context/UserDetailContext"
-import { db } from "../../config/firebaseConfig"
+import { useState, useEffect, useContext } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StatusBar,
+  Platform,
+  SafeAreaView,
+  Image,
+  StyleSheet,
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
+import { UserDetailContext } from "../../context/UserDetailContext";
+import { db } from "../../config/firebaseConfig";
 
-const primaryColor = "#f43e17"
+const primaryColor = "#f43e17";
 
 const Orders = ({ navigation }) => {
-  const [orders, setOrders] = useState([])
-  const [expandedOrder, setExpandedOrder] = useState(null)
+  const [orders, setOrders] = useState([]);
+  const [expandedOrder, setExpandedOrder] = useState(null);
   const { userDetail } = useContext(UserDetailContext);
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const userRef = doc(db, "users", userDetail?.email)
-        const userSnap = await getDoc(userRef)
+        const ordersRef = collection(db, "orders");
+        const q = query(ordersRef, where("email", "==", userDetail?.email));
+        const querySnapshot = await getDocs(q);
 
-        if (userSnap.exists()) {
-          const data = userSnap.data()
-          setOrders(data.orders || [])
-        }
+        const userOrders = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setOrders(userOrders);
       } catch (err) {
-        console.error("Failed to fetch orders:", err)
+        console.error("Failed to fetch orders:", err);
       }
-    }
+    };
 
     if (userDetail?.email) {
-      fetchOrders()
+      fetchOrders();
     }
-  }, [userDetail])
+  }, [userDetail]);
 
   const toggleOrderDetails = (orderId) => {
-    if (expandedOrder === orderId) {
-      setExpandedOrder(null)
-    } else {
-      setExpandedOrder(orderId)
-    }
-  }
+    setExpandedOrder(prev => (prev === orderId ? null : orderId));
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Delivered":
-        return "#4caf50"
-      case "Processing":
-        return "#2196f3"
-      case "Shipped":
-        return "#ff9800"
-      case "Cancelled":
-        return "#f44336"
-      default:
-        return "#9e9e9e"
+      case "Delivered": return "#4caf50";
+      case "Processing": return "#2196f3";
+      case "Shipped": return "#ff9800";
+      case "Cancelled": return "#f44336";
+      default: return "#9e9e9e";
     }
-  }
+  };
 
   const getStatusBgColor = (status) => {
     switch (status) {
-      case "Delivered":
-        return "#e8f5e9"
-      case "Processing":
-        return "#e3f2fd"
-      case "Shipped":
-        return "#fff3e0"
-      case "Cancelled":
-        return "#ffebee"
-      default:
-        return "#f5f5f5"
+      case "Delivered": return "#e8f5e9";
+      case "Processing": return "#e3f2fd";
+      case "Shipped": return "#fff3e0";
+      case "Cancelled": return "#ffebee";
+      default: return "#f5f5f5";
     }
-  }
+  };
 
-  const renderOrderItem = (item, index) => {
-    console.log(item.image);
-    return (
-      <View key={`${item.id || item.name}-${index}`} style={styles.orderItem}>
-        <View style={styles.productImage}>
+  const renderOrderItem = (item, index) => (
+    <View key={`${item.id || item.name}-${index}`} style={styles.orderItem}>
+      <View style={styles.productImage}>
         <Image
-        source={{ uri: item.image }}
-        style={styles.imageStyle}
-        resizeMode="cover"
-      />
-        </View>
-  
-        <View style={styles.productInfo}>
-          <Text style={styles.productName}>{item.name}</Text>
-          <Text style={styles.productVariant}>{item.variant}</Text>
-        </View>
-  
-        <View style={styles.priceContainer}>
-          <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
-          <Text style={styles.quantityText}>Qty: {item.quantity}</Text>
-        </View>
+          source={{ uri: item.image }}
+          style={styles.imageStyle}
+          resizeMode="cover"
+        />
       </View>
-    )
-  }
+      <View style={styles.productInfo}>
+        <Text style={styles.productName}>{item.name}</Text>
+        <Text style={styles.productVariant}>{item.variant}</Text>
+      </View>
+      <View style={styles.priceContainer}>
+        <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+        <Text style={styles.quantityText}>Qty: {item.quantity}</Text>
+      </View>
+    </View>
+  );
 
   const renderOrder = (order, index) => {
-    const isExpanded = expandedOrder === order.orderNumber
+    const isExpanded = expandedOrder === order.id;
 
     return (
-      <View key={order.orderNumber || `order-${index}`} style={styles.orderContainer}>
-        <TouchableOpacity style={styles.orderHeader} onPress={() => toggleOrderDetails(order.id || order.orderNumber)} activeOpacity={0.7}>
+      <View key={order.id} style={styles.orderContainer}>
+        <TouchableOpacity
+          style={styles.orderHeader}
+          onPress={() => toggleOrderDetails(order.id)}
+          activeOpacity={0.7}
+        >
           <View>
             <Text style={styles.orderNumber}>{order.orderNumber}</Text>
             <Text style={styles.orderDate}>Order Date: {order.date}</Text>
           </View>
-
           <View style={styles.orderHeaderRight}>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusBgColor(order.status) }]}>
-              <Text style={[styles.statusText, { color: getStatusColor(order.status) }]}>{order.status}</Text>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: getStatusBgColor(order.status) },
+              ]}
+            >
+              <Text
+                style={[styles.statusText, { color: getStatusColor(order.status) }]}
+              >
+                {order.status}
+              </Text>
             </View>
             <Feather
               name={isExpanded ? "chevron-up" : "chevron-down"}
@@ -123,23 +134,31 @@ const Orders = ({ navigation }) => {
           <View style={styles.orderDetails}>
             <View style={styles.orderItemsContainer}>
               <Text style={styles.sectionTitle}>Order Items</Text>
-              {order.items.map((item) => renderOrderItem({ ...item, key: item.id || `${item.name}-${item.variant}` }))}
+              {order.items.map((item, idx) =>
+                renderOrderItem({ ...item, key: item.id || `${item.name}-${item.variant}` }, idx)
+              )}
             </View>
 
             <View style={styles.orderSummary}>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryValue}>${(order.total * 0.92).toFixed(2)}</Text>
+                <Text style={styles.summaryValue}>
+                  ${(order.total * 0.92).toFixed(2)}
+                </Text>
               </View>
 
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Tax (8%)</Text>
-                <Text style={styles.summaryValue}>${(order.total * 0.08).toFixed(2)}</Text>
+                <Text style={styles.summaryValue}>
+                  ${(order.total * 0.08).toFixed(2)}
+                </Text>
               </View>
 
               <View style={[styles.summaryRow, styles.totalRow]}>
                 <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalValue}>${order.total.toFixed(2)}</Text>
+                <Text style={styles.totalValue}>
+                  ${order.total.toFixed(2)}
+                </Text>
               </View>
             </View>
 
@@ -160,8 +179,8 @@ const Orders = ({ navigation }) => {
           </View>
         )}
       </View>
-    )
-  }
+    );
+  };
 
   const renderEmptyOrders = () => (
     <View style={styles.emptyOrdersContainer}>
@@ -176,13 +195,11 @@ const Orders = ({ navigation }) => {
         <Text style={styles.shopNowButtonText}>Shop Now</Text>
       </TouchableOpacity>
     </View>
-  )
+  );
 
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-
-      {/* Header */}
       <View
         style={{
           backgroundColor: primaryColor,
@@ -210,15 +227,18 @@ const Orders = ({ navigation }) => {
       </View>
 
       {orders.length > 0 ? (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {orders.map((order) => renderOrder({ ...order, key: order.orderNumber || order.id }))}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {orders.map((order, index) => renderOrder(order, index))}
         </ScrollView>
       ) : (
         renderEmptyOrders()
       )}
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {

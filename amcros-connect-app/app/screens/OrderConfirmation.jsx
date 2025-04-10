@@ -12,7 +12,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { addDoc, arrayUnion, doc, updateDoc } from 'firebase/firestore';
+import { addDoc, arrayUnion, collection, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../config/firebaseConfig';
 import { UserDetailContext } from '../../context/UserDetailContext';
 
@@ -91,6 +91,7 @@ const OrderConfirmation = () => {
       const deliveryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   
       const orderData = {
+        email: userDetail?.email,
         orderNumber,
         orderDate: new Date().toISOString(),
         estimatedDelivery: deliveryDate.toISOString(),
@@ -103,20 +104,19 @@ const OrderConfirmation = () => {
         status: "Processing"
       };
   
-      const userRef = doc(db, 'users', userDetail?.email);
+      // 👇 This is the correct collection ref
+      const orderRef = collection(db, "orders");
+      await addDoc(orderRef, orderData); // Add to collection
   
-      await updateDoc(userRef, {
-        orders: arrayUnion(orderData)
-      });
-  
-      setIsProcessing(false);
       setOrderPlaced(true);
       setPopupVisible(true);
     } catch (err) {
-      console.error("Could not place order:", err);
+      console.error("Error adding to orders collection:", err);
+    } finally {
       setIsProcessing(false);
     }
   };
+  
 
   return (
     <View style={styles.container}>
