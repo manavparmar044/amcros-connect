@@ -75,7 +75,7 @@ const Account = () => {
         <Text style={styles.headerTitle}>Account</Text>
         <TouchableOpacity 
           style={styles.headerButton}
-          onPress={() => router.push("/account/edit")}
+          onPress={() => router.push("../screens/EditDetails")}
         >
           <Feather name="edit-2" size={20} color="#fff" />
         </TouchableOpacity>
@@ -117,7 +117,7 @@ const Account = () => {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Account Settings</Text>
           <View style={styles.sectionContent}>
-            {renderSettingsItem("notifications-outline", "Notifications", "Manage your notification preferences", () => router.push("/settings/notifications"))}
+            {renderSettingsItem("notifications-outline", "Notifications", "Manage your notification preferences", () => router.push("../screens/Notifications"))}
             {renderSettingsItem("lock-closed-outline", "Security", "Update password and security settings", () => router.push("/settings/security"))}
             {renderSettingsItem("card-outline", "Payment Methods", "Manage your payment options", () => router.push("/settings/payments"))}
             {renderSettingsItem("help-circle-outline", "Help & Support", "Get assistance and view FAQs", () => router.push("/support"))}

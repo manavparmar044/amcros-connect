@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -8,256 +8,168 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
-  StyleSheet,
-  Image
+  StyleSheet
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { getChatResponse } from '../services/chatbot';
+import { UserDetailContext } from '../../context/UserDetailContext';
+import { useRouter } from 'expo-router';
 
 const primaryColor = "#f43e17";
 
-// Dummy chat data
-const initialMessages = [
-  {
-    id: 1,
-    text: "Hello! How can I help you today?",
-    sender: "admin",
-    timestamp: new Date(Date.now() - 3600000 * 2), // 2 hours ago
-    read: true
-  },
-  {
-    id: 2,
-    text: "I have a question about my recent order #12345",
-    sender: "user",
-    timestamp: new Date(Date.now() - 3600000 * 1.9), // 1.9 hours ago
-    read: true
-  },
-  {
-    id: 3,
-    text: "Of course, I'd be happy to help with that. Could you please tell me what specific information you need about your order?",
-    sender: "admin",
-    timestamp: new Date(Date.now() - 3600000 * 1.8), // 1.8 hours ago
-    read: true
-  },
-  {
-    id: 4,
-    text: "I wanted to know when it will be shipped. It's been 3 days since I placed the order.",
-    sender: "user",
-    timestamp: new Date(Date.now() - 3600000 * 1.7), // 1.7 hours ago
-    read: true
-  },
-  {
-    id: 5,
-    text: "Let me check that for you right away. One moment please...",
-    sender: "admin",
-    timestamp: new Date(Date.now() - 3600000 * 1.6), // 1.6 hours ago
-    read: true
-  },
-  {
-    id: 6,
-    text: "I've checked your order and I can see it's been processed. It's scheduled to ship tomorrow and you should receive a tracking number via email once it's on its way.",
-    sender: "admin",
-    timestamp: new Date(Date.now() - 3600000 * 1.5), // 1.5 hours ago
-    read: true
-  },
-  {
-    id: 7,
-    text: "That's great, thank you for checking!",
-    sender: "user",
-    timestamp: new Date(Date.now() - 3600000 * 1.4), // 1.4 hours ago
-    read: true
-  },
-  {
-    id: 8,
-    text: "You're welcome! Is there anything else I can help you with today?",
-    sender: "admin",
-    timestamp: new Date(Date.now() - 3600000 * 0.5), // 30 minutes ago
-    read: true
-  }
-];
-
 const Chat = () => {
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState([
+    // Initial welcome message
+    {
+      id: 1,
+      text: "Hello! I'm your order assistant. How can I help you today?",
+      sender: 'admin',
+      timestamp: new Date().toISOString(),
+      read: true
+    }
+  ]);
   const [newMessage, setNewMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const scrollViewRef = useRef();
-  
-  // Scroll to bottom when messages change
+  const { userDetail } = useContext(UserDetailContext);
+  const router = useRouter();
+
+  // Scroll to bottom when messages update
   useEffect(() => {
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    scrollViewRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
-  
+
   const formatTime = (date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
-  
-  const formatDate = (date) => {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    if (date.toDateString() === today.toDateString()) {
-      return 'Today';
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
-    } else {
-      return date.toLocaleDateString();
-    }
-  };
-  
-  const handleSend = () => {
+
+  const handleSend = async () => {
     if (newMessage.trim() === '') return;
-    
-    const userMessage = {
+
+    const userMsg = {
       id: messages.length + 1,
       text: newMessage.trim(),
       sender: 'user',
-      timestamp: new Date(),
-      read: false
+      timestamp: new Date().toISOString(),
+      read: true
     };
-    
-    setMessages([...messages, userMessage]);
+
+    setMessages(prev => [...prev, userMsg]);
     setNewMessage('');
-    
-    // Simulate admin response after a short delay
-    setTimeout(() => {
-      const adminResponse = {
-        id: messages.length + 2,
-        text: "Thanks for your message. Our admin will get back to you shortly.",
+    setIsLoading(true);
+
+    try {
+      const botReply = await getChatResponse(newMessage.trim(), userDetail?.email);
+
+      const botMsg = {
+        id: userMsg.id + 1,
+        text: botReply,
         sender: 'admin',
-        timestamp: new Date(),
-        read: false
+        timestamp: new Date().toISOString(),
+        read: true
+      };
+
+      setMessages(prev => [...prev, botMsg]);
+    } catch (error) {
+      // Handle error
+      const errorMsg = {
+        id: userMsg.id + 1,
+        text: "Sorry, I couldn't process your request. Please try again.",
+        sender: 'admin',
+        timestamp: new Date().toISOString(),
+        read: true
       };
       
-      setMessages(prevMessages => [...prevMessages, adminResponse]);
-    }, 1000);
-  };
-  
-  // Group messages by date
-  const groupedMessages = messages.reduce((groups, message) => {
-    const date = formatDate(message.timestamp);
-    if (!groups[date]) {
-      groups[date] = [];
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setIsLoading(false);
     }
-    groups[date].push(message);
-    return groups;
-  }, {});
+  };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      keyboardVerticalOffset={90}
     >
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <Feather name="arrow-left" size={22} color="#fff" />
         </TouchableOpacity>
         
-        <View style={styles.adminInfo}>
-          <View style={styles.adminAvatar}>
-            <Text style={styles.adminInitial}>A</Text>
-          </View>
-          <View>
-            <Text style={styles.adminName}>Admin Support</Text>
-            <Text style={styles.adminStatus}>Online</Text>
-          </View>
-        </View>
+        <Text style={styles.headerTitle}>Order Assistant</Text>
         
-        <TouchableOpacity style={styles.moreButton}>
-          <Feather name="more-vertical" size={22} color="#fff" />
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
       </View>
-      
-      {/* Chat Messages */}
-      <ScrollView 
+
+      {/* Messages */}
+      <ScrollView
         ref={scrollViewRef}
-        style={styles.messagesContainer}
-        contentContainerStyle={styles.messagesContent}
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {Object.entries(groupedMessages).map(([date, dateMessages]) => (
-          <View key={date}>
-            <View style={styles.dateContainer}>
-              <Text style={styles.dateText}>{date}</Text>
-            </View>
-            
-            {dateMessages.map((message) => (
-              <View 
-                key={message.id} 
-                style={[
-                  styles.messageWrapper,
-                  message.sender === 'user' ? styles.userMessageWrapper : styles.adminMessageWrapper
-                ]}
-              >
-                {message.sender === 'admin' && (
-                  <View style={styles.messageBubbleAvatar}>
-                    <Text style={styles.messageBubbleAvatarText}>A</Text>
-                  </View>
-                )}
-                
-                <View 
-                  style={[
-                    styles.messageBubble,
-                    message.sender === 'user' ? styles.userMessage : styles.adminMessage
-                  ]}
-                >
-                  <Text style={[
-                    styles.messageText,
-                    message.sender === 'user' ? styles.userMessageText : styles.adminMessageText
-                  ]}>
-                    {message.text}
-                  </Text>
-                  <Text style={[
-                    styles.messageTime,
-                    message.sender === 'user' ? styles.userMessageTime : styles.adminMessageTime
-                  ]}>
-                    {formatTime(message.timestamp)}
-                  </Text>
-                </View>
-                
-                {message.sender === 'user' && (
-                  <View style={styles.messageStatus}>
-                    {message.read ? (
-                      <Feather name="check-circle" size={14} color="#4CAF50" />
-                    ) : (
-                      <Feather name="check" size={14} color="#999" />
-                    )}
-                  </View>
-                )}
-              </View>
-            ))}
+        {messages.map((msg) => (
+          <View
+            key={msg.id}
+            style={[
+              styles.messageBubble,
+              msg.sender === 'user' ? styles.userBubble : styles.adminBubble
+            ]}
+          >
+            <Text style={[
+              styles.messageText,
+              msg.sender === 'user' ? styles.userMessageText : styles.adminMessageText
+            ]}>
+              {msg.text}
+            </Text>
+            <Text style={[
+              styles.timeText,
+              msg.sender === 'user' ? styles.userTimeText : styles.adminTimeText
+            ]}>
+              {formatTime(new Date(msg.timestamp))}
+            </Text>
           </View>
         ))}
-      </ScrollView>
-      
-      {/* Message Input */}
-      <View style={styles.inputContainer}>
-        <TouchableOpacity style={styles.attachButton}>
-          <Feather name="paperclip" size={22} color="#777" />
-        </TouchableOpacity>
         
+        {/* Loading indicator */}
+        {isLoading && (
+          <View style={[styles.messageBubble, styles.adminBubble, styles.loadingBubble]}>
+            <View style={styles.loadingDots}>
+              <View style={styles.dot} />
+              <View style={styles.dot} />
+              <View style={styles.dot} />
+            </View>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Input Area */}
+      <View style={styles.inputArea}>
         <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
+          style={styles.textInput}
+          placeholder="Ask about your order..."
           placeholderTextColor="#999"
           value={newMessage}
           onChangeText={setNewMessage}
           multiline
         />
-        
         <TouchableOpacity 
-          style={[
-            styles.sendButton,
-            newMessage.trim() === '' ? styles.sendButtonDisabled : {}
-          ]}
-          onPress={handleSend}
+          style={styles.sendButton} 
+          onPress={handleSend} 
           disabled={newMessage.trim() === ''}
         >
-          <Feather name="send" size={20} color={newMessage.trim() === '' ? "#ccc" : "#fff"} />
+          <Feather 
+            name="send" 
+            size={22} 
+            color={newMessage.trim() === '' ? '#ccc' : primaryColor} 
+          />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -271,125 +183,60 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: primaryColor,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
     paddingBottom: 15,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   backButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
-  adminInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  adminAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  adminInitial: {
+  headerTitle: {
+    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-    color: primaryColor,
   },
-  adminName: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  adminStatus: {
-    color: '#fff',
-    fontSize: 12,
-    opacity: 0.8,
-  },
-  moreButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  messagesContainer: {
+  scrollView: {
     flex: 1,
   },
-  messagesContent: {
-    padding: 15,
+  contentContainer: {
+    padding: 16,
     paddingBottom: 20,
   },
-  dateContainer: {
-    alignItems: 'center',
-    marginVertical: 15,
-  },
-  dateText: {
-    fontSize: 12,
-    color: '#777',
-    backgroundColor: '#eee',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  messageWrapper: {
-    flexDirection: 'row',
-    marginBottom: 12,
-    maxWidth: '80%',
-  },
-  userMessageWrapper: {
-    alignSelf: 'flex-end',
-    flexDirection: 'row',
-  },
-  adminMessageWrapper: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-  },
-  messageBubbleAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: primaryColor,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-    alignSelf: 'flex-end',
-    marginBottom: 4,
-  },
-  messageBubbleAvatarText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
   messageBubble: {
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 2,
-  },
-  userMessage: {
-    backgroundColor: primaryColor,
-    borderBottomRightRadius: 4,
-  },
-  adminMessage: {
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 4,
+    borderRadius: 16,
+    padding: 12,
+    marginVertical: 6,
+    maxWidth: '80%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowRadius: 2,
     elevation: 1,
+  },
+  userBubble: {
+    alignSelf: 'flex-end',
+    backgroundColor: primaryColor,
+    borderBottomRightRadius: 4,
+  },
+  adminBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 4,
   },
   messageText: {
     fontSize: 15,
     lineHeight: 20,
-    marginRight: 40,
   },
   userMessageText: {
     color: '#fff',
@@ -397,58 +244,64 @@ const styles = StyleSheet.create({
   adminMessageText: {
     color: '#333',
   },
-  messageTime: {
-    fontSize: 10,
-    position: 'absolute',
-    bottom: 8,
-    right: 12,
+  timeText: {
+    fontSize: 11,
+    marginTop: 4,
+    alignSelf: 'flex-end',
   },
-  userMessageTime: {
+  userTimeText: {
     color: 'rgba(255, 255, 255, 0.7)',
   },
-  adminMessageTime: {
+  adminTimeText: {
     color: '#999',
   },
-  messageStatus: {
-    alignSelf: 'flex-end',
-    marginLeft: 4,
-    marginBottom: 4,
+  loadingBubble: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    minWidth: 70,
   },
-  inputContainer: {
+  loadingDots: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  attachButton: {
-    width: 40,
-    height: 40,
     justifyContent: 'center',
-    alignItems: 'center',
+    height: 10,
   },
-  input: {
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#ccc',
+    marginHorizontal: 2,
+    opacity: 0.7,
+  },
+  inputArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderTopWidth: 1,
+    borderColor: '#eee',
+    backgroundColor: '#fff',
+  },
+  textInput: {
     flex: 1,
     backgroundColor: '#f5f5f5',
     borderRadius: 20,
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    maxHeight: 100,
+    paddingRight: 45,
     fontSize: 16,
-    marginHorizontal: 8,
+    borderWidth: 1,
+    borderColor: '#eee',
+    maxHeight: 100,
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: primaryColor,
+    position: 'absolute',
+    right: 20,
+    bottom: 18,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#f0f0f0',
   },
 });
 
