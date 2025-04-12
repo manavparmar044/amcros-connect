@@ -120,7 +120,7 @@ const Account = () => {
             {renderSettingsItem("notifications-outline", "Notifications", "Manage your notification preferences", () => router.push("../screens/Notifications"))}
             {renderSettingsItem("lock-closed-outline", "Security", "Update password and security settings", () => router.push("/settings/security"))}
             {renderSettingsItem("card-outline", "Payment Methods", "Manage your payment options", () => router.push("/settings/payments"))}
-            {renderSettingsItem("help-circle-outline", "Help & Support", "Get assistance and view FAQs", () => router.push("/support"))}
+            {renderSettingsItem("help-circle-outline", "Help & Support", "Get assistance and view FAQs", () => router.push("../screens/Faq"))}
           </View>
         </View>
         

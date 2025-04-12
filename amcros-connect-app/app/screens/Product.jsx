@@ -7,9 +7,11 @@ import {
   TouchableOpacity, 
   StatusBar,
   SafeAreaView,
-  Platform
+  Platform,
+  Dimensions,
+  Animated
 } from "react-native";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useRef } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { UserDetailContext } from "../../context/UserDetailContext";
@@ -17,16 +19,23 @@ import { arrayUnion, doc, updateDoc } from "firebase/firestore";
 import { db } from "../../config/firebaseConfig";
 
 const primaryColor = "#f43e17";
+const { width } = Dimensions.get('window');
 
 const Product = () => {
   const { name, image, price } = useLocalSearchParams();
   const router = useRouter();
 
-  const { userDetail,setUserDetail } = useContext(UserDetailContext);
+  const { userDetail, setUserDetail } = useContext(UserDetailContext);
+  
+  // Animation refs
+  const buttonScale = useRef(new Animated.Value(1)).current;
+  const buttonOpacity = useRef(new Animated.Value(1)).current;
   
   // State for pack size selection
   const [selectedPack, setSelectedPack] = useState(3);
   const [quantity, setQuantity] = useState(1);
+  const [isAdding, setIsAdding] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
   
   // Calculate price based on pack size
   const basePrice = parseInt(price);
@@ -37,7 +46,40 @@ const Product = () => {
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
 
+  // Button animation
+  const animateButton = () => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(buttonScale, {
+          toValue: 0.95,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonOpacity, {
+          toValue: 0.9,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(buttonScale, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonOpacity, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  };
+
   const handleAddToCart = async () => {
+    animateButton();
+    setIsAdding(true);
+    
     const cartItem = {
       name,
       image,
@@ -46,14 +88,22 @@ const Product = () => {
       price: selectedPack === 3 ? basePrice : Math.round(basePrice * 1.2),
       timestamp: new Date(),
     }
-    try{
-      const userRef = doc(db,'users',userDetail?.email)
+    
+    try {
+      const userRef = doc(db, 'users', userDetail?.email);
       await updateDoc(userRef, {
         cart: arrayUnion(cartItem)
-      })
-    }
-    catch(err){
-      console.log("Could not add to cart",err);
+      });
+      
+      // Show success state
+      setAddedToCart(true);
+      setTimeout(() => {
+        setAddedToCart(false);
+      }, 2000);
+    } catch(err) {
+      console.log("Could not add to cart", err);
+    } finally {
+      setIsAdding(false);
     }
   }
 
@@ -72,14 +122,22 @@ const Product = () => {
         
         <Text style={styles.headerTitle}>Product Details</Text>
         
-        <TouchableOpacity style={styles.cartButton}>
+        <TouchableOpacity 
+          style={styles.cartButton}
+          onPress={() => router.push('/Cart')}
+        >
           <Feather name="shopping-cart" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
       
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Product Image */}
-        <Image source={{ uri: image }} style={styles.image} />
+        {/* Enhanced Product Image Section */}
+        <View style={styles.imageContainer}>
+          <Image source={{ uri: image }} style={styles.image} />
+          <View style={styles.imageBadge}>
+            <Text style={styles.badgeText}>Premium</Text>
+          </View>
+        </View>
         
         {/* Product Info */}
         <View style={styles.infoContainer}>
@@ -188,12 +246,44 @@ const Product = () => {
         </View>
       </ScrollView>
       
-      {/* Add to Cart Button */}
+      {/* Enhanced Add to Cart Button */}
       <View style={styles.bottomContainer}>
-        <TouchableOpacity onPress={handleAddToCart} style={styles.addToCartButton}>
-          <Feather name="shopping-bag" size={20} color="#fff" style={styles.buttonIcon} />
-          <Text style={styles.addToCartButtonText}>Add to Cart</Text>
-        </TouchableOpacity>
+        <Animated.View 
+          style={[
+            styles.buttonAnimationContainer,
+            {
+              transform: [{ scale: buttonScale }],
+              opacity: buttonOpacity
+            }
+          ]}
+        >
+          <TouchableOpacity 
+            onPress={handleAddToCart} 
+            style={[
+              styles.addToCartButton,
+              addedToCart && styles.addedToCartButton
+            ]}
+            disabled={isAdding || addedToCart}
+          >
+            {isAdding ? (
+              <View style={styles.loadingContainer}>
+                <View style={styles.loadingDot} />
+                <View style={[styles.loadingDot, { animationDelay: '0.2s' }]} />
+                <View style={[styles.loadingDot, { animationDelay: '0.4s' }]} />
+              </View>
+            ) : addedToCart ? (
+              <>
+                <Feather name="check-circle" size={20} color="#fff" style={styles.buttonIcon} />
+                <Text style={styles.addToCartButtonText}>Added to Cart</Text>
+              </>
+            ) : (
+              <>
+                <Feather name="shopping-bag" size={20} color="#fff" style={styles.buttonIcon} />
+                <Text style={styles.addToCartButtonText}>Add to Cart</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </View>
   );
@@ -231,10 +321,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  // Enhanced Image Container
+  imageContainer: {
+    width: "100%",
+    height: 350,
+    position: 'relative',
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+  },
   image: {
     width: "100%",
-    height: 300,
-    resizeMode: "cover",
+    height: "100%",
+    resizeMode: "contain",
+  },
+  imageBadge: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: primaryColor,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   infoContainer: {
     padding: 20,
@@ -360,33 +477,61 @@ const styles = StyleSheet.create({
     color: primaryColor,
     fontWeight: 'bold',
   },
+  // Enhanced Bottom Container
   bottomContainer: {
     backgroundColor: '#fff',
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderTopWidth: 1,
     borderTopColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 10,
   },
+  buttonAnimationContainer: {
+    width: '100%',
+  },
+  // Enhanced Add to Cart Button
   addToCartButton: {
     backgroundColor: primaryColor,
-    borderRadius: 10,
-    paddingVertical: 15,
+    borderRadius: 12,
+    paddingVertical: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: primaryColor,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 6,
+  },
+  addedToCartButton: {
+    backgroundColor: '#4CAF50', // Success green color
   },
   buttonIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   addToCartButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 20,
+  },
+  loadingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#fff',
+    marginHorizontal: 3,
+    opacity: 0.7,
   },
 });
 

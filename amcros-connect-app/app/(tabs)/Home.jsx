@@ -58,6 +58,89 @@ const Home = () => {
       : Array.isArray(item.type) && item.type.includes(activeCategory)
   );
 
+  const isAdmin = userDetail?.email === "admin@gmail.com";
+
+  if (isAdmin) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
+        <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
+        
+        {/* Admin Header */}
+        <View style={{ backgroundColor: primaryColor }}>
+          <SafeAreaView>
+            <View style={{
+              paddingVertical: 20,
+              paddingHorizontal: 20,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}>
+              <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>
+                Admin Dashboard
+              </Text>
+              <TouchableOpacity onPress={() => router.push("/admin/settings")}>
+                <Feather name="settings" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+        </View>
+
+        {/* Admin Content */}
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
+            Welcome Admin!
+          </Text>
+          
+          <View style={{ width: "80%" }}>
+            <TouchableOpacity 
+              style={{
+                backgroundColor: primaryColor,
+                padding: 15,
+                borderRadius: 8,
+                marginBottom: 15,
+                alignItems: "center"
+              }}
+              onPress={() => router.push("/admin/products")}
+            >
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                Manage Products
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={{
+                backgroundColor: primaryColor,
+                padding: 15,
+                borderRadius: 8,
+                marginBottom: 15,
+                alignItems: "center"
+              }}
+              onPress={() => router.push("/admin/orders")}
+            >
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                View Orders
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={{
+                backgroundColor: primaryColor,
+                padding: 15,
+                borderRadius: 8,
+                alignItems: "center"
+              }}
+              onPress={() => router.push("/admin/users")}
+            >
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                Manage Users
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
@@ -82,7 +165,7 @@ const Home = () => {
             <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>
               Hello, {userDetail?.businessName}
             </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push("/Cart")}>
               <Feather name="shopping-cart" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
