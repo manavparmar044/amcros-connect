@@ -52,94 +52,124 @@ const Home = () => {
   }, []);
 
   // Updated filter for multiple types in array
-  const filteredProducts = products.filter((item) =>
-    activeCategory === "All"
-      ? true
-      : Array.isArray(item.type) && item.type.includes(activeCategory)
-  );
+  const filteredProducts = products.filter((item) => {
+    const matchesCategory =
+      activeCategory === "All"
+        ? true
+        : Array.isArray(item.type) && item.type.includes(activeCategory);
+  
+    const matchesSearch =
+      search.trim() === "" ||
+      item.name.toLowerCase().includes(search.toLowerCase());
+  
+    return matchesCategory && matchesSearch;
+  });
 
   const isAdmin = userDetail?.email === "admin@gmail.com";
 
   if (isAdmin) {
-    return (
-      <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
-        <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-        
-        {/* Admin Header */}
-        <View style={{ backgroundColor: primaryColor }}>
-          <SafeAreaView>
-            <View style={{
-              paddingVertical: 20,
+  return (
+    <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
+      <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
+
+      {/* Admin Header */}
+      <View style={{ backgroundColor: primaryColor }}>
+        <SafeAreaView>
+          <View
+            style={{
+              paddingVertical: 24,
               paddingHorizontal: 20,
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-            }}>
-              <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>
-                Admin Dashboard
-              </Text>
-              <TouchableOpacity onPress={() => router.push("/admin/settings")}>
-                <Feather name="settings" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </SafeAreaView>
-        </View>
-
-        {/* Admin Content */}
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
-            Welcome Admin!
-          </Text>
-          
-          <View style={{ width: "80%" }}>
-            <TouchableOpacity 
-              style={{
-                backgroundColor: primaryColor,
-                padding: 15,
-                borderRadius: 8,
-                marginBottom: 15,
-                alignItems: "center"
-              }}
-              onPress={() => router.push("/admin/products")}
-            >
-              <Text style={{ color: "#fff", fontWeight: "bold" }}>
-                Manage Products
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={{
-                backgroundColor: primaryColor,
-                padding: 15,
-                borderRadius: 8,
-                marginBottom: 15,
-                alignItems: "center"
-              }}
-              onPress={() => router.push("/admin/orders")}
-            >
-              <Text style={{ color: "#fff", fontWeight: "bold" }}>
-                View Orders
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={{
-                backgroundColor: primaryColor,
-                padding: 15,
-                borderRadius: 8,
-                alignItems: "center"
-              }}
-              onPress={() => router.push("/admin/users")}
-            >
-              <Text style={{ color: "#fff", fontWeight: "bold" }}>
-                Manage Users
-              </Text>
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 24, fontWeight: "800" }}>
+              Admin Dashboard
+            </Text>
+            <TouchableOpacity onPress={() => router.push("../admin/settings")}>
+              <Feather name="settings" size={26} color="#fff" />
             </TouchableOpacity>
           </View>
+        </SafeAreaView>
+      </View>
+
+      {/* Admin Content */}
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          paddingHorizontal: 20,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 26,
+            fontWeight: "bold",
+            marginBottom: 8,
+            color: "#333",
+          }}
+        >
+          Welcome Admin!
+        </Text>
+        <Text
+          style={{
+            fontSize: 16,
+            color: "#777",
+            marginBottom: 30,
+            textAlign: "center",
+          }}
+        >
+          Manage your products and orders from here.
+        </Text>
+
+        <View style={{ width: "100%" }}>
+          <TouchableOpacity
+            style={{
+              backgroundColor: primaryColor,
+              paddingVertical: 16,
+              borderRadius: 12,
+              marginBottom: 18,
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 6,
+              elevation: 3,
+            }}
+            onPress={() => router.push("../admin/ProductEdit")}
+          >
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+              Manage Products
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{
+              backgroundColor: primaryColor,
+              paddingVertical: 16,
+              borderRadius: 12,
+              marginBottom: 10,
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 6,
+              elevation: 3,
+            }}
+            onPress={() => router.push("../admin/ViewOrders")}
+          >
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+              Manage Orders
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
-    );
-  }
+    </View>
+  );
+}
+
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
