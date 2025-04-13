@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StatusBar, ScrollView, Alert, StyleSheet, Platform } from "react-native";
+import { View, Text, TouchableOpacity, StatusBar, ScrollView, Alert, StyleSheet, Platform, SafeAreaView } from "react-native";
 import React, { useContext } from "react";
 import { UserDetailContext } from "../../context/UserDetailContext";
 import { auth } from "../../config/firebaseConfig";
@@ -10,7 +10,7 @@ const primaryColor = "#f43e17";
 
 const Account = () => {
   const router = useRouter();
-  const { userDetail,setUserDetail } = useContext(UserDetailContext);
+  const { userDetail, setUserDetail } = useContext(UserDetailContext);
 
   const handleLogout = () => {
     Alert.alert(
@@ -70,15 +70,40 @@ const Account = () => {
     <View style={styles.container}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
       
-      {/* header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Account</Text>
-        <TouchableOpacity 
-          style={styles.headerButton}
-          onPress={() => router.push("../screens/EditDetails")}
-        >
-          <Feather name="edit-2" size={20} color="#fff" />
-        </TouchableOpacity>
+      {/* Header - Updated to match Orders.jsx */}
+      <View
+        style={{
+          backgroundColor: primaryColor,
+          paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+        }}
+      >
+        <SafeAreaView style={{ backgroundColor: primaryColor }}>
+          <View
+            style={{
+              paddingVertical: 20,
+              paddingHorizontal: 20,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>
+              Account
+            </Text>
+            <TouchableOpacity 
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 18,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+              onPress={() => router.push("../screens/EditDetails")}
+            >
+              <Feather name="edit-2" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
       </View>
       
       <ScrollView 
@@ -150,35 +175,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 20,
   },
-  header: {
-    backgroundColor: primaryColor,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-    zIndex: 1,
-    height: 70
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-  headerButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  // Header styles removed as we're using inline styles to match Orders.jsx
   profileContainer: {
     marginTop: 20,
     marginHorizontal: 20,

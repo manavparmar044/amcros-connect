@@ -8,7 +8,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
-  StyleSheet
+  StyleSheet,
+  SafeAreaView
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { getChatResponse } from '../services/chatbot';
@@ -94,18 +95,32 @@ const Chat = () => {
     >
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Feather name="arrow-left" size={22} color="#fff" />
-        </TouchableOpacity>
-        
-        <Text style={styles.headerTitle}>Order Assistant</Text>
-        
-        <View style={{ width: 40 }} />
+      {/* Header - Matched with Orders.jsx structure */}
+      <View
+        style={{
+          backgroundColor: primaryColor,
+          paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+        }}
+      >
+        <SafeAreaView style={{ backgroundColor: primaryColor }}>
+          <View
+            style={{
+              paddingVertical: 20,
+              paddingHorizontal: 20,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <TouchableOpacity onPress={() => router.back()}>
+              <Feather name="arrow-left" size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>
+              Order Assistant
+            </Text>
+            <View style={{ width: 24 }} /> {/* Empty view for balance */}
+          </View>
+        </SafeAreaView>
       </View>
 
       {/* Messages */}
@@ -140,14 +155,14 @@ const Chat = () => {
         
         {/* Loading indicator */}
         {isLoading && (
-          <View style={[styles.messageBubble, styles.adminBubble, styles.loadingBubble]}>
-            <View style={styles.loadingDots}>
-              <View style={styles.dot} />
-              <View style={styles.dot} />
-              <View style={styles.dot} />
-            </View>
-          </View>
-        )}
+  <View style={[styles.messageBubble, styles.adminBubble, styles.loadingBubble]}>
+    <View style={styles.loadingDots}>
+      <Text><View style={styles.dot} /></Text>
+      <Text><View style={styles.dot} /></Text>
+      <Text><View style={styles.dot} /></Text>
+    </View>
+  </View>
+)}
       </ScrollView>
 
       {/* Input Area */}
@@ -180,31 +195,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-  },
-  header: {
-    backgroundColor: primaryColor,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
   },
   scrollView: {
     flex: 1,
