@@ -48,15 +48,15 @@ export default function signUp() {
       }}
     >
       {/* Logo */}
-      <View
-        style={{
-          width: 80,
-          height: 80,
-          backgroundColor: "#f43e17",
-          marginBottom: 20,
-          borderRadius: 10,
-        }}
-      />
+      <Image
+  source={{ uri: "https://res.cloudinary.com/ds4z0fqxi/image/upload/v1744556861/amcros-connect/amcros-logo_wfvljv.png" }}
+  style={{
+    width: 140,
+    height: 140,
+    marginBottom: 20,
+    resizeMode: "contain",
+  }}
+/>
 
       {/* Input Fields */}
       <TextInput

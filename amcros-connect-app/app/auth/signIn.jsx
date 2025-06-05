@@ -1,4 +1,4 @@
-import { Text, TextInput, View, TouchableOpacity, ActivityIndicator } from "react-native";
+import { Text, TextInput, View, TouchableOpacity, ActivityIndicator, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../../config/firebaseConfig";
@@ -51,15 +51,17 @@ export default function signIn() {
       }}
     >
       {/* Logo */}
-      <View
-        style={{
-          width: 80,
-          height: 80,
-          backgroundColor: "#f43e17",
-          marginBottom: 40,
-          borderRadius: 10,
-        }}
-      />
+      <Image
+    source={{
+      uri: "https://res.cloudinary.com/ds4z0fqxi/image/upload/v1744556861/amcros-connect/amcros-logo_wfvljv.png",
+    }}
+    style={{
+      width: 120,
+      height: 120,
+      resizeMode: "contain",
+      marginBottom: 20,
+    }}
+  />
 
       {/* Input Fields */}
       <TextInput

@@ -123,20 +123,22 @@ const OrderConfirmation = () => {
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
       
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Feather name="arrow-left" size={22} color="#fff" />
-        </TouchableOpacity>
-        
-        <Text style={styles.headerTitle}>
-          {orderPlaced ? "Order Confirmation" : "Review Order"}
-        </Text>
-        
-        <View style={{ width: 40 }} />
-      </View>
+      <View
+            style={{
+              paddingVertical: 20,
+              paddingHorizontal: 20,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>
+              Orders
+            </Text>
+            <TouchableOpacity>
+              <Feather name="shopping-cart" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
       
       <ScrollView 
         style={styles.scrollView}
@@ -262,9 +264,7 @@ const OrderConfirmation = () => {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Shipping Address</Text>
           <Text style={styles.addressText}>
-            123 Business Street{'\n'}
-            Cityville, State 12345{'\n'}
-            India
+            {userDetail?.address}
           </Text>
         </View>
         
@@ -301,7 +301,7 @@ const OrderConfirmation = () => {
               
               <TouchableOpacity 
                 style={styles.secondaryButton}
-                onPress={() => {/* Navigate to orders */}}
+                onPress={() => router.push("../(tabs)/Orders")}
               >
                 <Feather name="file-text" size={18} color="#555" style={styles.buttonIcon} />
                 <Text style={styles.secondaryButtonText}>View All Orders</Text>
@@ -348,20 +348,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-  },
-  header: {
-    backgroundColor: primaryColor,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
   },
   backButton: {
     width: 40,

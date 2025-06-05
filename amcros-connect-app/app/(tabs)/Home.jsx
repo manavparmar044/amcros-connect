@@ -84,10 +84,10 @@ const Home = () => {
               alignItems: "center",
             }}
           >
-            <Text style={{ color: "#fff", fontSize: 24, fontWeight: "800" }}>
+            <Text style={{ color: "#fff", fontSize: 24, fontWeight: "bold" }}>
               Admin Dashboard
             </Text>
-            <TouchableOpacity onPress={() => router.push("../admin/settings")}>
+            <TouchableOpacity onPress={() => router.push("./Account")}>
               <Feather name="settings" size={26} color="#fff" />
             </TouchableOpacity>
           </View>

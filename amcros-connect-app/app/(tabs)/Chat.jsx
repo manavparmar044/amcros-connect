@@ -20,7 +20,6 @@ const primaryColor = "#f43e17";
 
 const Chat = () => {
   const [messages, setMessages] = useState([
-    // Initial welcome message
     {
       id: 1,
       text: "Hello! I'm your order assistant. How can I help you today?",
@@ -35,12 +34,12 @@ const Chat = () => {
   const { userDetail } = useContext(UserDetailContext);
   const router = useRouter();
 
-  // Scroll to bottom when messages update
   useEffect(() => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
   const formatTime = (date) => {
+    if (isNaN(date)) return '';
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
@@ -64,7 +63,7 @@ const Chat = () => {
 
       const botMsg = {
         id: userMsg.id + 1,
-        text: botReply,
+        text: String(botReply || "Sorry, something went wrong."),
         sender: 'admin',
         timestamp: new Date().toISOString(),
         read: true
@@ -72,7 +71,6 @@ const Chat = () => {
 
       setMessages(prev => [...prev, botMsg]);
     } catch (error) {
-      // Handle error
       const errorMsg = {
         id: userMsg.id + 1,
         text: "Sorry, I couldn't process your request. Please try again.",
@@ -80,7 +78,6 @@ const Chat = () => {
         timestamp: new Date().toISOString(),
         read: true
       };
-      
       setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
@@ -95,35 +92,18 @@ const Chat = () => {
     >
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
 
-      {/* Header - Matched with Orders.jsx structure */}
-      <View
-        style={{
-          backgroundColor: primaryColor,
-          paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-        }}
-      >
+      <View style={{ backgroundColor: primaryColor, paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0 }}>
         <SafeAreaView style={{ backgroundColor: primaryColor }}>
-          <View
-            style={{
-              paddingVertical: 20,
-              paddingHorizontal: 20,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
+          <View style={{ paddingVertical: 20, paddingHorizontal: 20, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <TouchableOpacity onPress={() => router.back()}>
               <Feather name="arrow-left" size={24} color="#fff" />
             </TouchableOpacity>
-            <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>
-              Order Assistant
-            </Text>
-            <View style={{ width: 24 }} /> {/* Empty view for balance */}
+            <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>Order Assistant</Text>
+            <View style={{ width: 24 }} />
           </View>
         </SafeAreaView>
       </View>
 
-      {/* Messages */}
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
@@ -142,7 +122,7 @@ const Chat = () => {
               styles.messageText,
               msg.sender === 'user' ? styles.userMessageText : styles.adminMessageText
             ]}>
-              {msg.text}
+              {String(msg.text)}
             </Text>
             <Text style={[
               styles.timeText,
@@ -152,20 +132,18 @@ const Chat = () => {
             </Text>
           </View>
         ))}
-        
-        {/* Loading indicator */}
+
         {isLoading && (
-  <View style={[styles.messageBubble, styles.adminBubble, styles.loadingBubble]}>
-    <View style={styles.loadingDots}>
-      <Text><View style={styles.dot} /></Text>
-      <Text><View style={styles.dot} /></Text>
-      <Text><View style={styles.dot} /></Text>
-    </View>
-  </View>
-)}
+          <View style={[styles.messageBubble, styles.adminBubble, styles.loadingBubble]}>
+            <View style={styles.loadingDots}>
+              <View style={styles.dot} />
+              <View style={styles.dot} />
+              <View style={styles.dot} />
+            </View>
+          </View>
+        )}
       </ScrollView>
 
-      {/* Input Area */}
       <View style={styles.inputArea}>
         <TextInput
           style={styles.textInput}

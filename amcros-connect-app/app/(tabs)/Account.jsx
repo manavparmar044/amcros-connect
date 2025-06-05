@@ -69,8 +69,6 @@ const Account = () => {
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor={primaryColor} barStyle="light-content" />
-      
-      {/* Header - Updated to match Orders.jsx */}
       <View
         style={{
           backgroundColor: primaryColor,
@@ -143,8 +141,8 @@ const Account = () => {
           <Text style={styles.sectionTitle}>Account Settings</Text>
           <View style={styles.sectionContent}>
             {renderSettingsItem("notifications-outline", "Notifications", "Manage your notification preferences", () => router.push("../screens/Notifications"))}
-            {renderSettingsItem("lock-closed-outline", "Security", "Update password and security settings", () => router.push("/settings/security"))}
-            {renderSettingsItem("card-outline", "Payment Methods", "Manage your payment options", () => router.push("/settings/payments"))}
+            {renderSettingsItem("lock-closed-outline", "Security", "Update password and security settings", () => router.push("../screens/Security"))}
+            {renderSettingsItem("card-outline", "Payment Methods", "Manage your payment options", () => router.push("../screens/Payment"))}
             {renderSettingsItem("help-circle-outline", "Help & Support", "Get assistance and view FAQs", () => router.push("../screens/Faq"))}
           </View>
         </View>

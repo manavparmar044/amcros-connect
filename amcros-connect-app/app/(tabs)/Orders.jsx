@@ -88,7 +88,7 @@ const Orders = ({ navigation }) => {
         <Text style={styles.productVariant}>{item.variant}</Text>
       </View>
       <View style={styles.priceContainer}>
-        <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
+        <Text style={styles.productPrice}>₹{item.price.toFixed(2)}</Text>
         <Text style={styles.quantityText}>Qty: {item.quantity}</Text>
       </View>
     </View>
@@ -143,21 +143,21 @@ const Orders = ({ navigation }) => {
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subtotal</Text>
                 <Text style={styles.summaryValue}>
-                  ${(order.total * 0.92).toFixed(2)}
+                ₹{(order.total * 0.92).toFixed(2)}
                 </Text>
               </View>
 
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Tax (8%)</Text>
                 <Text style={styles.summaryValue}>
-                  ${(order.total * 0.08).toFixed(2)}
+                ₹{(order.total * 0.08).toFixed(2)}
                 </Text>
               </View>
 
               <View style={[styles.summaryRow, styles.totalRow]}>
                 <Text style={styles.totalLabel}>Total</Text>
                 <Text style={styles.totalValue}>
-                  ${order.total.toFixed(2)}
+                ₹{order.total.toFixed(2)}
                 </Text>
               </View>
             </View>

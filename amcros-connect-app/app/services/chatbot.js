@@ -1,8 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { collection, getDocs, query, where, getFirestore } from "firebase/firestore";
 import api from "../constants/api";
+import {GEMINI_API_KEY} from "@env"
 
-const genAI = new GoogleGenerativeAI(api.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 export const getChatResponse = async (userMessage, email) => {
   try {
@@ -34,3 +35,4 @@ Answer this user question in a helpful and friendly tone:
     return "Sorry, I'm having trouble answering that right now.";
   }
 };
+
