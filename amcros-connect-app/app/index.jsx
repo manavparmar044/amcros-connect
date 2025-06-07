@@ -14,9 +14,15 @@ export default function LandingScreen() {
       console.log("Hello from index");
       console.log(user);
       console.log(user.email);
-      const res = await getDoc(doc(db,'users',"mmparmar044@gmail.com"))
-      setUserDetail(res.data())
-      router.replace('/(tabs)/Home')
+      const res = await getDoc(doc(db,'users',user.email))
+      if(user.email == "admin@gmail.com"){
+        setUserDetail(res.data())
+        router.replace('/(admin-tabs)/Home')
+      }
+      else{
+        setUserDetail(res.data())
+        router.replace('/(tabs)/Home')
+      }
     }
     else{
       console.log("No user detected");
