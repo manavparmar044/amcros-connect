@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   notificationDot: {
     width: 10,
     height: 10,
-    backgroundColor: primaryColor,
+    backgroundColor: "green",
     borderRadius: 5,
     position: "absolute",
     top: -2,
