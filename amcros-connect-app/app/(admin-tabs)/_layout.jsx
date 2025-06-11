@@ -39,12 +39,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="Cart"
-        options={{
-          tabBarIcon: ({ color, size }) => <AntDesign name="shoppingcart" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="Account"
         options={{
           tabBarIcon: ({ color, size }) => <MaterialIcons name="account-circle" size={size} color={color} />,
