@@ -33,12 +33,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="Orders"
-        options={{
-          tabBarIcon: ({ color, size }) => <Octicons name="package" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="Account"
         options={{
           tabBarIcon: ({ color, size }) => <MaterialIcons name="account-circle" size={size} color={color} />,
