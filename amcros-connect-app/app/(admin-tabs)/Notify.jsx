@@ -1,116 +1,105 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
-  TouchableOpacity,
   TextInput,
+  TouchableOpacity,
   ScrollView,
-  Switch,
+  Alert,
+  ActivityIndicator,
+  StyleSheet,
   StatusBar,
   Platform,
-  SafeAreaView,
-  Alert,
-  ActivityIndicator
-} from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+  SafeAreaView
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { collection, addDoc, Timestamp, onSnapshot, query, orderBy } from "firebase/firestore";
+import { db } from "../../config/firebaseConfig";
+import { useRouter } from "expo-router";
 
 const primaryColor = "#f43e17";
 
 const Notify = () => {
   const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
-  const [notificationType, setNotificationType] = useState('all'); // 'all', 'specific'
-  const [sendToAll, setSendToAll] = useState(true);
-  const [includeImage, setIncludeImage] = useState(false);
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [recentNotifications, setRecentNotifications] = useState([
-    {
-      id: '1',
-      title: 'New Products Available',
-      message: 'Check out our latest collection of premium socks!',
-      sentTo: 'All Users',
-      sentAt: '2 hours ago',
-      status: 'Delivered'
-    },
-    {
-      id: '2',
-      title: 'Weekend Sale',
-      message: 'Enjoy 20% off on all products this weekend. Use code WEEKEND20.',
-      sentTo: 'Active Users',
-      sentAt: '1 day ago',
-      status: 'Delivered'
-    },
-    {
-      id: '3',
-      title: 'Order Update',
-      message: 'Your recent orders have been shipped. Track them in the Orders section.',
-      sentTo: 'Recent Customers',
-      sentAt: '3 days ago',
-      status: 'Delivered'
-    }
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSendNotification = () => {
+  useEffect(() => {
+    const q = query(collection(db, "notifications"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notifs = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setNotifications(notifs);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching notifications:", error);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleSendNotification = async () => {
     if (!title.trim()) {
-      Alert.alert('Error', 'Please enter a notification title');
+      Alert.alert("Error", "Please enter a notification title");
       return;
     }
     
     if (!message.trim()) {
-      Alert.alert('Error', 'Please enter a notification message');
+      Alert.alert("Error", "Please enter a notification message");
       return;
     }
-    
+
     setIsSending(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      const newNotification = {
-        id: Date.now().toString(),
-        title,
-        message,
-        sentTo: sendToAll ? 'All Users' : 'Selected Users',
-        sentAt: 'Just now',
-        status: 'Sent'
-      };
-      
-      setRecentNotifications([newNotification, ...recentNotifications]);
-      setTitle('');
-      setMessage('');
-      setIsSending(false);
-      
+
+    try {
+      await addDoc(collection(db, "notifications"), {
+        title: title.trim(),
+        description: message.trim(),
+        createdAt: Timestamp.now(),
+      });
+
+      setTitle("");
+      setMessage("");
       Alert.alert(
-        'Success',
-        'Notification has been sent successfully!',
-        [{ text: 'OK' }]
+        "Success",
+        "Notification sent successfully!",
+        [{ text: "OK" }]
       );
-    }, 1500);
+    } catch (error) {
+      Alert.alert("Error", "Failed to send notification. Please try again.");
+      console.error(error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
-  const renderNotificationTypeButton = (type, label) => (
-    <TouchableOpacity
-      style={[
-        styles.typeButton,
-        notificationType === type && styles.selectedTypeButton
-      ]}
-      onPress={() => {
-        setNotificationType(type);
-        setSendToAll(type === 'all');
-      }}
-    >
-      <Text
-        style={[
-          styles.typeButtonText,
-          notificationType === type && styles.selectedTypeButtonText
-        ]}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
+  const formatDate = (timestamp) => {
+    if (!timestamp) return "";
+    
+    const date = timestamp.toDate();
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
+    if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+    if (diffDays < 7) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+    
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -126,12 +115,12 @@ const Notify = () => {
         <SafeAreaView style={{ backgroundColor: primaryColor }}>
           <View
             style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 20,
-                paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 20,
-            }}
+                paddingVertical: 20,
+                paddingHorizontal: 20,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
           >
             <TouchableOpacity onPress={() => router.back()}>
               <Feather name="arrow-left" size={24} color="#fff" />
@@ -148,7 +137,7 @@ const Notify = () => {
         style={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Notification Composer */}
+        {/* Notification Composer Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Create Notification</Text>
           
@@ -173,88 +162,9 @@ const Notify = () => {
             multiline
             numberOfLines={4}
             maxLength={200}
+            textAlignVertical="top"
           />
           <Text style={styles.charCount}>{message.length}/200</Text>
-          
-          <View style={styles.optionRow}>
-            <Text style={styles.optionLabel}>Include Image</Text>
-            <Switch
-              trackColor={{ false: "#ddd", true: `${primaryColor}80` }}
-              thumbColor={includeImage ? primaryColor : "#f4f4f4"}
-              onValueChange={setIncludeImage}
-              value={includeImage}
-            />
-          </View>
-          
-          {includeImage && (
-            <TouchableOpacity style={styles.imageSelector}>
-              <Feather name="image" size={24} color="#999" />
-              <Text style={styles.imageSelectorText}>Select an image</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-        
-        {/* Target Audience */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Target Audience</Text>
-          
-          <View style={styles.typeButtonsContainer}>
-            {renderNotificationTypeButton('all', 'All Users')}
-            {renderNotificationTypeButton('specific', 'Specific Users')}
-          </View>
-          
-          {notificationType === 'specific' && (
-            <View style={styles.specificOptions}>
-              <View style={styles.optionRow}>
-                <Text style={styles.optionLabel}>Active Users</Text>
-                <Switch
-                  trackColor={{ false: "#ddd", true: `${primaryColor}80` }}
-                  thumbColor={true ? primaryColor : "#f4f4f4"}
-                  value={true}
-                />
-              </View>
-              
-              <View style={styles.optionRow}>
-                <Text style={styles.optionLabel}>Recent Customers</Text>
-                <Switch
-                  trackColor={{ false: "#ddd", true: `${primaryColor}80` }}
-                  thumbColor={true ? primaryColor : "#f4f4f4"}
-                  value={true}
-                />
-              </View>
-              
-              <View style={styles.optionRow}>
-                <Text style={styles.optionLabel}>New Users</Text>
-                <Switch
-                  trackColor={{ false: "#ddd", true: `${primaryColor}80` }}
-                  thumbColor={false ? primaryColor : "#f4f4f4"}
-                  value={false}
-                />
-              </View>
-            </View>
-          )}
-        </View>
-        
-        {/* Notification Preview */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Preview</Text>
-          
-          <View style={styles.previewContainer}>
-            <View style={styles.previewHeader}>
-              <View style={styles.previewIcon}>
-                <Feather name="bell" size={16} color="#fff" />
-              </View>
-              <Text style={styles.previewAppName}>Your App</Text>
-              <Text style={styles.previewTime}>now</Text>
-            </View>
-            
-            <Text style={styles.previewTitle}>
-              {title || "Notification Title"}
-            </Text>
-            <Text style={styles.previewMessage}>
-              {message || "Notification message will appear here. Write something to see the preview."}
-            </Text>
-          </View>
           
           <TouchableOpacity
             style={[
@@ -275,32 +185,53 @@ const Notify = () => {
           </TouchableOpacity>
         </View>
         
-        {/* Recent Notifications */}
+        {/* Recent Notifications Card */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Recent Notifications</Text>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Recent Notifications</Text>
+            <View style={styles.notificationCountBadge}>
+              <Text style={styles.notificationCountText}>{notifications.length}</Text>
+            </View>
+          </View>
           
-          {recentNotifications.map((notification) => (
-            <View key={notification.id} style={styles.notificationItem}>
-              <View style={styles.notificationHeader}>
-                <Text style={styles.notificationTitle}>{notification.title}</Text>
-                <Text style={styles.notificationTime}>{notification.sentAt}</Text>
-              </View>
-              
-              <Text style={styles.notificationMessage} numberOfLines={2}>
-                {notification.message}
-              </Text>
-              
-              <View style={styles.notificationFooter}>
-                <Text style={styles.notificationTarget}>
-                  Sent to: {notification.sentTo}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={primaryColor} />
+              <Text style={styles.loadingText}>Loading notifications...</Text>
+            </View>
+          ) : notifications.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Feather name="bell-off" size={40} color="#ccc" />
+              <Text style={styles.emptyText}>No notifications sent yet</Text>
+            </View>
+          ) : (
+            notifications.map((notif) => (
+              <View key={notif.id} style={styles.notificationItem}>
+                <View style={styles.notificationHeader}>
+                  <View style={styles.notificationIconContainer}>
+                    <Feather name="bell" size={16} color="#fff" />
+                  </View>
+                  <Text style={styles.notificationTitle} numberOfLines={1}>
+                    {notif.title}
+                  </Text>
+                </View>
+                
+                <Text style={styles.notificationMessage}>
+                  {notif.description}
                 </Text>
-                <View style={styles.statusContainer}>
-                  <View style={styles.statusDot} />
-                  <Text style={styles.statusText}>{notification.status}</Text>
+                
+                <View style={styles.notificationFooter}>
+                  <Text style={styles.notificationTime}>
+                    {formatDate(notif.createdAt)}
+                  </Text>
+                  <View style={styles.notificationStatus}>
+                    <View style={styles.statusDot} />
+                    <Text style={styles.statusText}>Sent</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          ))}
+            ))
+          )}
         </View>
       </ScrollView>
     </View>
@@ -327,11 +258,28 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 2,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   cardTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
     marginBottom: 16,
+  },
+  notificationCountBadge: {
+    backgroundColor: primaryColor,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 10,
+  },
+  notificationCountText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   inputLabel: {
     fontSize: 15,
@@ -360,104 +308,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 16,
   },
-  optionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  optionLabel: {
-    fontSize: 15,
-    color: '#555',
-  },
-  imageSelector: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#eee',
-    borderStyle: 'dashed',
-    height: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  imageSelectorText: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 8,
-  },
-  typeButtonsContainer: {
-    flexDirection: 'row',
-    marginBottom: 16,
-  },
-  typeButton: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  selectedTypeButton: {
-    backgroundColor: `${primaryColor}15`,
-    borderWidth: 1,
-    borderColor: primaryColor,
-  },
-  typeButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
-  },
-  selectedTypeButtonText: {
-    color: primaryColor,
-    fontWeight: '600',
-  },
-  specificOptions: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    padding: 12,
-  },
-  previewContainer: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  previewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  previewIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: primaryColor,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  previewAppName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  previewTime: {
-    fontSize: 12,
-    color: '#999',
-    marginLeft: 'auto',
-  },
-  previewTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  previewMessage: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-  },
   sendButton: {
     backgroundColor: primaryColor,
     borderRadius: 10,
@@ -484,6 +334,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#777',
+    fontSize: 14,
+  },
+  emptyContainer: {
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    marginTop: 10,
+    color: '#777',
+    fontSize: 16,
+  },
   notificationItem: {
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
@@ -492,35 +361,42 @@ const styles = StyleSheet.create({
   },
   notificationHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
+  },
+  notificationIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: primaryColor,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
   },
   notificationTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#333',
     flex: 1,
   },
-  notificationTime: {
-    fontSize: 12,
-    color: '#999',
-  },
   notificationMessage: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 8,
+    lineHeight: 20,
+    marginBottom: 10,
+    paddingLeft: 38,
   },
   notificationFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingLeft: 38,
   },
-  notificationTarget: {
+  notificationTime: {
     fontSize: 12,
-    color: '#888',
+    color: '#999',
   },
-  statusContainer: {
+  notificationStatus: {
     flexDirection: 'row',
     alignItems: 'center',
   },
