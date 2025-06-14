@@ -11,67 +11,53 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { db } from '../../config/firebaseConfig';
 
 const primaryColor = "#f43e17";
 
 const Notification = () => {
   const router = useRouter();
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return "";
+    
+    const date = timestamp.toDate();
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
+    if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+    if (diffDays < 7) return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+    
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  const fetchNotifications = () => {
+    const q = query(collection(db, "notifications"), orderBy("createdAt", "desc"));
+  }
+
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    // Dummy notification data
-    const dummyNotifications = [
-      {
-        id: '1',
-        title: 'Order Shipped',
-        message: 'Your order #AMC123456 has been shipped and is on its way to you. Expected delivery: Tomorrow.',
-        time: '2 hours ago',
-        isRead: false,
-        type: 'order'
-      },
-      {
-        id: '2',
-        title: 'New Products Available',
-        message: 'Check out our latest collection of premium cotton socks. Limited time offer - 20% off!',
-        time: '1 day ago',
-        isRead: true,
-        type: 'promotion'
-      },
-      {
-        id: '3',
-        title: 'Payment Successful',
-        message: 'Your payment of ₹1,299 for order #AMC123455 has been processed successfully.',
-        time: '2 days ago',
-        isRead: true,
-        type: 'payment'
-      },
-      {
-        id: '4',
-        title: 'Welcome to Our Store!',
-        message: 'Thank you for joining us! Explore our premium collection and enjoy your shopping experience.',
-        time: '3 days ago',
-        isRead: true,
-        type: 'welcome'
-      },
-      {
-        id: '5',
-        title: 'Order Delivered',
-        message: 'Your order #AMC123454 has been delivered successfully. We hope you love your purchase!',
-        time: '1 week ago',
-        isRead: true,
-        type: 'order'
-      },
-      {
-        id: '6',
-        title: 'Weekend Sale Alert',
-        message: 'Don\'t miss out! Weekend sale is live now. Get up to 30% off on selected items.',
-        time: '1 week ago',
-        isRead: true,
-        type: 'promotion'
-      }
-    ];
-    
-    setNotifications(dummyNotifications);
+    const q = query(collection(db, "notifications"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setNotifications(data);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const getNotificationIcon = (type) => {
@@ -212,11 +198,11 @@ const Notification = () => {
                       </View>
                       
                       <Text style={styles.notificationMessage} numberOfLines={2}>
-                        {notification.message}
+                        {notification.description}
                       </Text>
                       
                       <Text style={styles.notificationTime}>
-                        {notification.time}
+                      {formatDate(notification.createdAt)}
                       </Text>
                     </View>
                   </View>
